@@ -10,3 +10,7 @@ Thumbs.db
 photobooth/
 previews/
 *.local.*
+
+# clasp 本機設定（含 scriptId，不進公開 repo）
+gas/.clasp.json
+.clasprc.json
