@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>石門國小 AI 智慧拍貼機 📸</title>
+<meta name="description" content="桃園市龍潭區石門國民小學 — 手勢倒數自拍、可換邊框、雲端上傳、掃 QR Code 下載照片的土炮智慧拍貼機。" />
+<style>
+  :root{
+    --bg1:#fff7ec; --bg2:#ffe7d0; --ink:#3a2a18; --ink-soft:#7a6650;
+    --brand:#e08a3c; --brand-d:#c66f23; --accent:#1f8fa6; --card:#fffdf8;
+    --line:rgba(120,90,50,.16); --shadow:0 10px 30px rgba(120,80,30,.16);
+    --ok:#2e9e5b; --danger:#d2553f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,-apple-system,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(120% 90% at 12% -10%, #fff 0%, transparent 55%),
+      linear-gradient(160deg,var(--bg1),var(--bg2));
+    min-height:100dvh; -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:14px 14px 0;}
+
+  /* ---- 頂列 ---- */
+  header.top{display:flex;align-items:center;gap:10px;padding:6px 2px 12px;}
+  .logo{font-size:26px;line-height:1}
+  .ttl{font-weight:800;font-size:19px;letter-spacing:.3px}
+  .ttl small{display:block;font-weight:600;font-size:11px;color:var(--ink-soft);letter-spacing:1.5px;margin-top:2px}
+  .top .sp{flex:1}
+  .iconbtn{
+    width:42px;height:42px;border-radius:14px;border:1px solid var(--line);
+    background:var(--card);font-size:19px;cursor:pointer;box-shadow:var(--shadow);
+    display:grid;place-items:center;transition:transform .12s;
+  }
+  .iconbtn:active{transform:scale(.92)}
+
+  /* ---- 舞台（相機 + 邊框）---- */
+  .stage{
+    position:relative;width:100%;aspect-ratio:3/4;border-radius:22px;overflow:hidden;
+    background:#11161b;box-shadow:var(--shadow);
+  }
+  .stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+    transform:scaleX(-1);background:#11161b}
+  .stage .frame{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;
+    pointer-events:none}
+  .stage .hint{
+    position:absolute;left:0;right:0;bottom:0;padding:26px 14px 14px;
+    background:linear-gradient(transparent,rgba(0,0,0,.55));
+    color:#fff;font-size:13px;text-align:center;pointer-events:none;
+    transition:opacity .3s}
+  /* 倒數大數字 */
+  .count{
+    position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;
+    color:#fff;font-size:46vw;max-font-size:240px;font-weight:900;
+    text-shadow:0 6px 30px rgba(0,0,0,.5);opacity:0}
+  .count.show{animation:pop .9s ease-out}
+  @keyframes pop{0%{opacity:0;transform:scale(.4)}25%{opacity:1;transform:scale(1)}
+    100%{opacity:0;transform:scale(1.25)}}
+  /* 手勢進度環 */
+  .gring{position:absolute;top:12px;left:12px;width:54px;height:54px;opacity:0;transition:opacity .2s}
+  .gring.on{opacity:1}
+  .gring svg{transform:rotate(-90deg)}
+  .gring .lbl{position:absolute;inset:0;display:grid;place-items:center;font-size:22px}
+  /* 拍照白閃 */
+  .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+  .flash.go{animation:fl .5s ease-out}
+  @keyframes fl{0%{opacity:.9}100%{opacity:0}}
+
+  /* ---- 邊框選擇 ---- */
+  .frames{display:flex;gap:10px;overflow-x:auto;padding:14px 2px 4px;scrollbar-width:none}
+  .frames::-webkit-scrollbar{display:none}
+  .fthumb{
+    flex:0 0 auto;width:62px;height:82px;border-radius:12px;cursor:pointer;
+    border:3px solid transparent;background:
+      conic-gradient(#eee 25%,#fafafa 0 50%,#eee 0 75%,#fafafa 0) 0/16px 16px;
+    overflow:hidden;position:relative;transition:transform .12s}
+  .fthumb img{width:100%;height:100%;object-fit:fill}
+  .fthumb.none{display:grid;place-items:center;font-size:11px;color:var(--ink-soft);
+    background:var(--card);text-align:center;line-height:1.3}
+  .fthumb.sel{border-color:var(--brand);transform:translateY(-2px)}
+  .fthumb .nm{position:absolute;left:0;right:0;bottom:0;font-size:9px;color:#fff;
+    background:rgba(0,0,0,.45);text-align:center;padding:2px 0}
+
+  /* ---- 控制列 ---- */
+  .controls{display:flex;align-items:center;gap:12px;padding:10px 2px 4px}
+  .shoot{
+    flex:1;height:60px;border:none;border-radius:18px;cursor:pointer;
+    background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#fff;
+    font-size:19px;font-weight:800;letter-spacing:1px;box-shadow:0 8px 22px rgba(200,110,35,.4);
+    display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s}
+  .shoot:active{transform:scale(.97)}
+  .shoot:disabled{opacity:.5;cursor:default}
+  .toggle{
+    display:flex;align-items:center;gap:7px;padding:0 14px;height:60px;border-radius:18px;
+    border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:13px;
+    font-weight:700;color:var(--ink-soft);box-shadow:var(--shadow);white-space:nowrap;text-align:center;line-height:1.2}
+  .toggle.on{color:#fff;background:linear-gradient(135deg,var(--accent),#15788c);border-color:transparent}
+  .toggle small{display:block;font-size:10px;font-weight:600;opacity:.85}
+
+  .secrow{display:flex;gap:8px;justify-content:center;padding:10px 0 2px}
+  .sec{padding:7px 16px;border-radius:999px;border:1px solid var(--line);background:var(--card);
+    cursor:pointer;font-size:13px;font-weight:700;color:var(--ink-soft)}
+  .sec.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  /* ---- 結果彈窗 ---- */
+  .modal{position:fixed;inset:0;background:rgba(30,18,8,.55);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
+  .modal.show{display:flex}
+  .sheet{background:var(--card);border-radius:24px;max-width:420px;width:100%;
+    max-height:92dvh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.4);padding:18px}
+  .sheet h2{margin:2px 0 12px;font-size:18px;text-align:center}
+  .result-img{width:100%;border-radius:16px;display:block;box-shadow:var(--shadow);background:#fff}
+  .qrbox{margin:14px auto 6px;text-align:center}
+  .qrbox canvas,.qrbox img{border-radius:12px;box-shadow:var(--shadow);background:#fff;padding:8px}
+  .qrcap{font-size:12px;color:var(--ink-soft);margin-top:8px;line-height:1.5}
+  .qrcap a{color:var(--brand-d);word-break:break-all}
+  .status{font-size:13px;text-align:center;padding:10px;border-radius:12px;margin:8px 0;
+    background:#fff4e7;color:var(--brand-d)}
+  .status.ok{background:#e9f8ef;color:var(--ok)}
+  .status.err{background:#fdecea;color:var(--danger)}
+  .btnrow{display:flex;gap:10px;margin-top:12px}
+  .btn{flex:1;height:50px;border-radius:14px;border:1px solid var(--line);background:#fff;
+    cursor:pointer;font-size:15px;font-weight:700;color:var(--ink);display:flex;
+    align-items:center;justify-content:center;gap:6px}
+  .btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#fff;border:none}
+  .btn:active{transform:scale(.97)}
+  .spinner{width:18px;height:18px;border:3px solid rgba(0,0,0,.15);border-top-color:var(--brand);
+    border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:-3px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---- 設定彈窗 ---- */
+  .field{margin:10px 0}
+  .field label{display:block;font-size:13px;font-weight:700;margin-bottom:5px}
+  .field input{width:100%;height:46px;border-radius:12px;border:1px solid var(--line);
+    padding:0 12px;font-size:14px;font-family:inherit}
+  .field p{font-size:11px;color:var(--ink-soft);margin:6px 0 0;line-height:1.6}
+
+  /* ---- 頁尾 ---- */
+  .site-credit{text-align:center;padding:22px 16px 30px;font-size:13px;color:var(--ink-soft)}
+  .site-credit__heart{display:inline-block;margin:0 2px;filter:saturate(1.1)}
+  .site-credit__author{color:inherit;text-decoration:none;border-bottom:1px dotted currentColor;
+    padding-bottom:1px;transition:color .2s,border-color .2s}
+  .site-credit__author:hover{color:var(--brand-d);border-bottom-color:var(--brand-d)}
+
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;font-size:14px;
+    opacity:0;transition:.25s;pointer-events:none;z-index:80;box-shadow:var(--shadow)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="logo">📸</span>
+    <div class="ttl">石門國小 AI 拍貼機<small>桃園市龍潭區石門國民小學 · 鱻魚特色學園</small></div>
+    <span class="sp"></span>
+    <button class="iconbtn" id="btnSettings" title="設定" aria-label="設定">⚙️</button>
+  </header>
+
+  <!-- 舞台 -->
+  <div class="stage" id="stage">
+    <video id="video" autoplay playsinline muted></video>
+    <img class="frame" id="frameImg" alt="" />
+    <div class="gring" id="gring">
+      <svg width="54" height="54" viewBox="0 0 54 54">
+        <circle cx="27" cy="27" r="23" fill="rgba(0,0,0,.35)" stroke="rgba(255,255,255,.3)" stroke-width="4"/>
+        <circle id="gringArc" cx="27" cy="27" r="23" fill="none" stroke="#7fe0b0" stroke-width="4"
+          stroke-linecap="round" stroke-dasharray="144.5" stroke-dashoffset="144.5"/>
+      </svg>
+      <div class="lbl">✋</div>
+    </div>
+    <div class="count" id="count"></div>
+    <div class="flash" id="flash"></div>
+    <div class="hint" id="hint">正在啟動相機…</div>
+  </div>
+
+  <!-- 邊框選擇 -->
+  <div class="frames" id="frames"></div>
+
+  <!-- 倒數秒數 -->
+  <div class="secrow" id="secrow">
+    <button class="sec" data-s="0">立即</button>
+    <button class="sec sel" data-s="3">3 秒</button>
+    <button class="sec" data-s="5">5 秒</button>
+    <button class="sec" data-s="10">10 秒</button>
+  </div>
+
+  <!-- 控制 -->
+  <div class="controls">
+    <button class="shoot" id="btnShoot" disabled>📷 拍照</button>
+    <button class="toggle" id="btnGesture" title="手勢自拍">✋ 手勢<small id="gState">關閉</small></button>
+  </div>
+</div>
+
+<footer class="site-credit">
+  Made with <span class="site-credit__heart" aria-label="愛心">❤️</span> by
+  <a href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
+     target="_blank" rel="noopener noreferrer" class="site-credit__author">阿凱老師</a>
+</footer>
+
+<!-- 結果彈窗 -->
+<div class="modal" id="resultModal">
+  <div class="sheet">
+    <h2>📸 拍貼完成！</h2>
+    <img class="result-img" id="resultImg" alt="拍貼成果" />
+    <div class="status" id="upStatus" style="display:none"></div>
+    <div class="qrbox" id="qrbox" style="display:none">
+      <div id="qrcode"></div>
+      <div class="qrcap" id="qrcap"></div>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="btnRetake">↺ 重拍</button>
+      <button class="btn" id="btnDownload">💾 存到本機</button>
+    </div>
+    <div class="btnrow" id="cloudRow">
+      <button class="btn primary" id="btnUpload">☁️ 上傳雲端 + 產 QR</button>
+    </div>
+  </div>
+</div>
+
+<!-- 設定彈窗 -->
+<div class="modal" id="settingsModal">
+  <div class="sheet">
+    <h2>⚙️ 設定</h2>
+    <div class="field">
+      <label for="gasUrl">雲端後端網址（GAS Web App /exec）</label>
+      <input id="gasUrl" type="url" placeholder="https://script.google.com/macros/s/XXXX/exec" />
+      <p>部署完 <code>gas/Code.gs</code> 後，把它的網址貼進來，就能「拍照→上傳雲端硬碟→掃 QR 下載」。<br>留空也能用：拍完照可直接存到本機。</p>
+    </div>
+    <div class="field">
+      <label>📷 相機鏡頭</label>
+      <select id="camSelect" style="width:100%;height:46px;border-radius:12px;border:1px solid var(--line);padding:0 10px;font-size:14px"></select>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="btnSettingsClose">關閉</button>
+      <button class="btn primary" id="btnSettingsSave">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- QR Code 產生器（davidshimjs/qrcodejs，載入後可離線使用）-->
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+<script>
+/* ============================================================
+   石門國小 AI 智慧拍貼機
+   - 前端：webcam 即時預覽 + 透明邊框 + 手勢/倒數自拍 + 合成
+   - 後端：Google Apps Script（存雲端硬碟，回傳直連網址）→ QR Code
+   ============================================================ */
+const CONFIG = {
+  // 邊框清單（要加新邊框：把 PNG 放進 frames/ 再來這裡補一行）
+  frames: [
+    { src: "frames/frame_graduation.png",  name: "畢業快樂" },
+    { src: "frames/frame_anniversary.png", name: "歡慶校慶" },
+    { src: "frames/frame_sports.png",      name: "運動會"   },
+    { src: "frames/frame_ocean.png",       name: "鱻魚學園" },
+    { src: "frames/frame_fishmascot.png",  name: "鱻魚吉祥" },
+    { src: "frames/frame_festival.png",    name: "歡樂佳節" },
+    { src: "",                             name: "無邊框"   },
+  ],
+  defaultSize: { w: 1080, h: 1440 }, // 無邊框時的輸出尺寸
+};
+
+const $ = (s) => document.querySelector(s);
+const state = {
+  stream: null, deviceId: localStorage.getItem("pb_cam") || null,
+  frame: null, frameImg: null, seconds: 3, busy: false,
+  gasUrl: localStorage.getItem("pb_gas") || "",
+  gesture: false, gestureBusy: false, lastShot: null,
+};
+
+const els = {
+  video: $("#video"), frameImg: $("#frameImg"), stage: $("#stage"),
+  hint: $("#hint"), count: $("#count"), flash: $("#flash"),
+  frames: $("#frames"), shoot: $("#btnShoot"),
+  gBtn: $("#btnGesture"), gState: $("#gState"),
+  gring: $("#gring"), gArc: $("#gringArc"),
+  toast: $("#toast"),
+};
+
+/* ---------- 小工具 ---------- */
+function toast(msg, ms = 2200){
+  els.toast.textContent = msg; els.toast.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(()=>els.toast.classList.remove("show"), ms);
+}
+function beep(freq = 880, dur = 0.12, vol = 0.15){
+  try{
+    const ctx = beep._c || (beep._c = new (window.AudioContext||window.webkitAudioContext)());
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value = freq; o.type = "sine"; o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    o.start(); o.stop(ctx.currentTime + dur);
+  }catch(e){}
+}
+
+/* ---------- 相機 ---------- */
+async function startCamera(deviceId){
+  if(state.stream) state.stream.getTracks().forEach(t=>t.stop());
+  const constraints = {
+    audio:false,
+    video: deviceId ? { deviceId:{exact:deviceId}, width:{ideal:1280}, height:{ideal:1280} }
+                    : { facingMode:"user", width:{ideal:1280}, height:{ideal:1280} },
+  };
+  try{
+    state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+    els.video.srcObject = state.stream;
+    await els.video.play().catch(()=>{});
+    els.shoot.disabled = false;
+    els.hint.textContent = "準備好就按「拍照」，或開啟「✋ 手勢」對鏡頭張開手掌";
+    setTimeout(()=>els.hint.style.opacity = .0, 3500);
+    await listCameras();
+  }catch(err){
+    els.hint.style.opacity = 1;
+    els.hint.textContent = "⚠️ 無法開啟相機：" + (err.name||err.message) +
+      "（請允許相機權限，且網址須為 https 或 localhost）";
+  }
+}
+async function listCameras(){
+  try{
+    const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="videoinput");
+    const sel = $("#camSelect"); if(!sel) return;
+    sel.innerHTML = "";
+    devs.forEach((d,i)=>{
+      const o = document.createElement("option");
+      o.value = d.deviceId; o.textContent = d.label || `鏡頭 ${i+1}`;
+      if(d.deviceId === state.deviceId) o.selected = true;
+      sel.appendChild(o);
+    });
+  }catch(e){}
+}
+
+/* ---------- 邊框 ---------- */
+function buildFrameThumbs(){
+  els.frames.innerHTML = "";
+  CONFIG.frames.forEach((f,i)=>{
+    const t = document.createElement("div");
+    t.className = "fthumb" + (f.src ? "" : " none") + (i===0 ? " sel" : "");
+    if(f.src){
+      t.innerHTML = `<img src="${f.src}" alt="${f.name}"><span class="nm">${f.name}</span>`;
+    }else{
+      t.textContent = "無\n邊框";
+    }
+    t.onclick = ()=>selectFrame(i);
+    els.frames.appendChild(t);
+  });
+  selectFrame(0);
+}
+function selectFrame(i){
+  [...els.frames.children].forEach((c,idx)=>c.classList.toggle("sel", idx===i));
+  const f = CONFIG.frames[i]; state.frame = f;
+  if(f.src){
+    els.frameImg.src = f.src; els.frameImg.style.display = "";
+    const img = new Image();
+    img.onload = ()=>{ state.frameImg = img;
+      els.stage.style.aspectRatio = `${img.naturalWidth}/${img.naturalHeight}`; };
+    img.src = f.src;
+  }else{
+    els.frameImg.style.display = "none"; state.frameImg = null;
+    els.stage.style.aspectRatio = `${CONFIG.defaultSize.w}/${CONFIG.defaultSize.h}`;
+  }
+}
+
+/* ---------- 倒數 + 拍照 ---------- */
+function setSeconds(s){
+  state.seconds = s;
+  [...$("#secrow").children].forEach(b=>b.classList.toggle("sel", +b.dataset.s===s));
+}
+async function shoot(){
+  if(state.busy) return; state.busy = true; els.shoot.disabled = true;
+  for(let n = state.seconds; n > 0; n--){
+    els.count.textContent = n; els.count.classList.remove("show");
+    void els.count.offsetWidth; els.count.classList.add("show");
+    beep(660, .12, .12);
+    await new Promise(r=>setTimeout(r, 1000));
+  }
+  els.count.classList.remove("show");
+  // 白閃 + 快門聲
+  els.flash.classList.remove("go"); void els.flash.offsetWidth; els.flash.classList.add("go");
+  beep(1200, .08, .18); setTimeout(()=>beep(440,.12,.12), 60);
+  const dataUrl = capture();
+  state.lastShot = dataUrl;
+  showResult(dataUrl);
+  state.busy = false; els.shoot.disabled = false;
+}
+function capture(){
+  const v = els.video;
+  const out = state.frameImg
+    ? { w: state.frameImg.naturalWidth, h: state.frameImg.naturalHeight }
+    : CONFIG.defaultSize;
+  const cv = document.createElement("canvas");
+  cv.width = out.w; cv.height = out.h;
+  const ctx = cv.getContext("2d");
+  // 影片 cover-crop 進畫布（並水平鏡像，跟預覽一致）
+  const cAR = out.w / out.h, vAR = (v.videoWidth||4) / (v.videoHeight||3);
+  let sw, sh, sx, sy;
+  if(vAR > cAR){ sh = v.videoHeight; sw = sh*cAR; sx = (v.videoWidth-sw)/2; sy = 0; }
+  else { sw = v.videoWidth; sh = sw/cAR; sx = 0; sy = (v.videoHeight-sh)/2; }
+  ctx.save(); ctx.translate(out.w,0); ctx.scale(-1,1);
+  ctx.drawImage(v, sx, sy, sw, sh, 0, 0, out.w, out.h);
+  ctx.restore();
+  // 疊邊框
+  if(state.frameImg) ctx.drawImage(state.frameImg, 0, 0, out.w, out.h);
+  return cv.toDataURL("image/jpeg", 0.92);
+}
+
+/* ---------- 結果彈窗 ---------- */
+function showResult(dataUrl){
+  $("#resultImg").src = dataUrl;
+  $("#qrbox").style.display = "none";
+  $("#upStatus").style.display = "none";
+  $("#cloudRow").style.display = state.gasUrl ? "flex" : "none";
+  $("#resultModal").classList.add("show");
+}
+function fnameStamp(){
+  const d = new Date(), p = (n)=>String(n).padStart(2,"0");
+  return `石門拍貼_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.jpg`;
+}
+function downloadShot(){
+  const a = document.createElement("a");
+  a.href = state.lastShot; a.download = fnameStamp(); a.click();
+  toast("已存到本機 💾");
+}
+
+/* ---------- 上傳 GAS + QR ---------- */
+async function uploadShot(){
+  if(!state.gasUrl){ toast("尚未設定雲端後端（按右上⚙️）"); return; }
+  const st = $("#upStatus");
+  st.style.display = "block"; st.className = "status";
+  st.innerHTML = `<span class="spinner"></span> 上傳到雲端硬碟中…`;
+  $("#cloudRow").style.display = "none";
+  try{
+    const res = await fetch(state.gasUrl, {
+      method:"POST",
+      headers:{ "Content-Type":"text/plain;charset=utf-8" }, // 避免 CORS preflight
+      body: JSON.stringify({ image: state.lastShot, filename: fnameStamp() }),
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || "後端回傳失敗");
+    const link = data.downloadUrl || data.url || data.viewUrl;
+    st.className = "status ok"; st.textContent = "✅ 已上傳！掃描下方 QR Code 即可下載照片";
+    renderQR(link);
+  }catch(err){
+    st.className = "status err";
+    st.innerHTML = "❌ 上傳失敗：" + (err.message||err) +
+      "<br>請確認 GAS 已部署為「任何人皆可存取」，網址正確。";
+    $("#cloudRow").style.display = "flex";
+  }
+}
+function renderQR(url){
+  const box = $("#qrbox"), holder = $("#qrcode"), cap = $("#qrcap");
+  holder.innerHTML = ""; box.style.display = "block";
+  cap.innerHTML = `📱 用手機相機掃描下載<br><a href="${url}" target="_blank" rel="noopener">${url}</a>`;
+  if(window.QRCode){
+    new QRCode(holder, { text:url, width:220, height:220,
+      colorDark:"#3a2a18", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.M });
+  }else{
+    holder.innerHTML = `<a href="${url}" target="_blank" rel="noopener">開啟照片連結 →</a>`;
+  }
+}
+
+/* ---------- 手勢自拍（MediaPipe Hands，動態載入）---------- */
+let handLandmarker = null, gestureRAF = 0, holdFrames = 0;
+const HOLD_NEED = 14; // 約 14 幀（~0.8s）張開手掌就觸發
+async function enableGesture(){
+  els.gState.textContent = "載入中…";
+  try{
+    const vision = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
+    const files = await vision.FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+    handLandmarker = await vision.HandLandmarker.createFromOptions(files, {
+      baseOptions:{ modelAssetPath:
+        "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+        delegate:"GPU" },
+      runningMode:"VIDEO", numHands:1,
+    });
+    state.gesture = true; els.gBtn.classList.add("on"); els.gState.textContent = "開啟";
+    toast("✋ 手勢自拍已開啟，對鏡頭張開手掌");
+    loopGesture();
+  }catch(err){
+    els.gState.textContent = "關閉";
+    toast("手勢功能載入失敗（需連網）：" + (err.message||err), 3200);
+  }
+}
+function disableGesture(){
+  state.gesture = false; els.gBtn.classList.remove("on"); els.gState.textContent = "關閉";
+  cancelAnimationFrame(gestureRAF); holdFrames = 0; setRing(0); els.gring.classList.remove("on");
+}
+function setRing(p){ // p:0~1
+  const C = 144.5; els.gArc.style.strokeDashoffset = C*(1-p);
+}
+function fingersUp(lm){
+  // lm: 21 點（normalized）。判斷四指是否伸直（tip 比 pip 高 → y 較小）
+  const up = (tip,pip)=> lm[tip].y < lm[pip].y - 0.02;
+  let c = 0;
+  if(up(8,6)) c++; if(up(12,10)) c++; if(up(16,14)) c++; if(up(20,18)) c++;
+  return c;
+}
+function loopGesture(){
+  if(!state.gesture) return;
+  const v = els.video;
+  if(v.readyState >= 2 && handLandmarker && !state.busy){
+    let res;
+    try{ res = handLandmarker.detectForVideo(v, performance.now()); }catch(e){}
+    const open = res && res.landmarks && res.landmarks[0] && fingersUp(res.landmarks[0]) >= 4;
+    if(open){
+      holdFrames++; els.gring.classList.add("on");
+      setRing(Math.min(1, holdFrames/HOLD_NEED));
+      if(holdFrames >= HOLD_NEED){
+        holdFrames = 0; setRing(0); els.gring.classList.remove("on");
+        beep(990,.1,.16); shoot();
+      }
+    }else{
+      holdFrames = Math.max(0, holdFrames-2);
+      setRing(holdFrames/HOLD_NEED);
+      if(holdFrames===0) els.gring.classList.remove("on");
+    }
+  }
+  gestureRAF = requestAnimationFrame(loopGesture);
+}
+
+/* ---------- 設定彈窗 ---------- */
+function openSettings(){
+  $("#gasUrl").value = state.gasUrl;
+  listCameras();
+  $("#settingsModal").classList.add("show");
+}
+function saveSettings(){
+  state.gasUrl = $("#gasUrl").value.trim();
+  localStorage.setItem("pb_gas", state.gasUrl);
+  const cam = $("#camSelect").value;
+  if(cam && cam !== state.deviceId){
+    state.deviceId = cam; localStorage.setItem("pb_cam", cam); startCamera(cam);
+  }
+  $("#settingsModal").classList.remove("show");
+  toast("設定已儲存 ✅");
+}
+
+/* ---------- 事件 ---------- */
+els.shoot.onclick = shoot;
+els.gBtn.onclick = ()=> state.gesture ? disableGesture() : enableGesture();
+$("#secrow").onclick = (e)=>{ const b = e.target.closest(".sec"); if(b) setSeconds(+b.dataset.s); };
+$("#btnSettings").onclick = openSettings;
+$("#btnSettingsClose").onclick = ()=> $("#settingsModal").classList.remove("show");
+$("#btnSettingsSave").onclick = saveSettings;
+$("#btnRetake").onclick = ()=> $("#resultModal").classList.remove("show");
+$("#btnDownload").onclick = downloadShot;
+$("#btnUpload").onclick = uploadShot;
+[ "#resultModal", "#settingsModal" ].forEach(id=>{
+  $(id).addEventListener("click", e=>{ if(e.target===$(id)) $(id).classList.remove("show"); });
+});
+document.addEventListener("keydown", e=>{ if(e.code==="Space" && !state.busy){ e.preventDefault(); shoot(); } });
+
+/* ---------- 啟動 ---------- */
+buildFrameThumbs();
+setSeconds(3);
+startCamera(state.deviceId);
+</script>
+</body>
+</html>

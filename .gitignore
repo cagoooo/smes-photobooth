@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 本機拍貼輸出 / 個人素材（如自行新增）
+photobooth/
+previews/
+*.local.*
