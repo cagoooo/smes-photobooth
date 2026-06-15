@@ -263,13 +263,16 @@ const CONFIG = {
     { src: "",                             name: "無邊框"   },
   ],
   defaultSize: { w: 1080, h: 1440 }, // 無邊框時的輸出尺寸
+  // 後端 GAS Web App /exec 預設網址：任何裝置打開即可上傳，免進 ⚙️ 設定。
+  // 要改後端時不用動這裡（clasp update-deployment 會保留同一網址）；⚙️ 設定仍可臨時覆蓋。
+  gasUrl: "https://script.google.com/macros/s/AKfycbz21fLRfwwpESRSOz4VBfJnIG5SFZzT5JFjSjqSvgWDd15aDVlZmvlPHQch_8dawOFn/exec",
 };
 
 const $ = (s) => document.querySelector(s);
 const state = {
   stream: null, deviceId: localStorage.getItem("pb_cam") || null,
   frame: null, frameImg: null, seconds: 3, busy: false,
-  gasUrl: localStorage.getItem("pb_gas") || "",
+  gasUrl: localStorage.getItem("pb_gas") || CONFIG.gasUrl || "",
   gesture: false, gestureBusy: false, lastShot: null,
 };
 
