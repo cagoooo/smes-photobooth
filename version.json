@@ -1,4 +1,4 @@
 {
-    "version":  "2026.06.15-2",
-    "notes":  "防濫用(token+限流) + 四格拼貼 + 即時相片牆"
+    "version":  "2026.06.15-3",
+    "notes":  "新增全套 PWA Favicons 與社群分享 OG 預覽圖"
 }

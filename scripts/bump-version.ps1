@@ -9,7 +9,7 @@ $today = Get-Date -Format "yyyy.MM.dd"
 
 $vp = Join-Path $root "version.json"; $seq = 1
 if (Test-Path $vp) {
-  $old = (Get-Content $vp -Raw | ConvertFrom-Json).version
+  $old = ([System.IO.File]::ReadAllText($vp, [System.Text.Encoding]::UTF8) | ConvertFrom-Json).version
   if ($old -match "^$([regex]::Escape($today))-(\d+)$") { $seq = [int]$Matches[1] + 1 }
 }
 $ver = "$today-$seq"
@@ -17,7 +17,10 @@ $ver = "$today-$seq"
 [System.IO.File]::WriteAllText($vp, ([ordered]@{ version = $ver; notes = $Notes } | ConvertTo-Json), $enc)
 foreach ($f in @(
     @("sw.js",      "const BUILD_VERSION = '[^']*';", "const BUILD_VERSION = '$ver';"),
-    @("index.html", "var APP_VERSION='[^']*';",       "var APP_VERSION='$ver';"))) {
+    @("index.html", "var APP_VERSION='[^']*';",       "var APP_VERSION='$ver';"),
+    @("index.html", '(favicon\.ico|favicon\.svg|apple-touch-icon\.png|manifest\.json|og-preview\.png)\?v=[^"'']*', ('$1?v=' + $ver)),
+    @("wall.html",  '(favicon\.ico|favicon\.svg|apple-touch-icon\.png|manifest\.json|og-preview\.png)\?v=[^"'']*', ('$1?v=' + $ver))
+)) {
   $p = Join-Path $root $f[0]
   $t = [System.IO.File]::ReadAllText($p, [System.Text.Encoding]::UTF8)
   [System.IO.File]::WriteAllText($p, [regex]::Replace($t, $f[1], $f[2]), $enc)
