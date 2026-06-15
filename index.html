@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>石門國小 AI 智慧拍貼機 📸</title>
 <meta name="description" content="桃園市龍潭區石門國民小學 — 手勢倒數自拍、可換邊框、雲端上傳、掃 QR Code 下載照片的土炮智慧拍貼機。" />
-<link rel="icon" href="./favicon.ico?v=2026.06.15-4" sizes="32x32" />
-<link rel="icon" href="./favicon.svg?v=2026.06.15-4" type="image/svg+xml" />
-<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2026.06.15-4" />
-<link rel="manifest" href="./manifest.json?v=2026.06.15-4" />
+<link rel="icon" href="./favicon.ico?v=2026.06.15-5" sizes="32x32" />
+<link rel="icon" href="./favicon.svg?v=2026.06.15-5" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2026.06.15-5" />
+<link rel="manifest" href="./manifest.json?v=2026.06.15-5" />
 
 <!-- Open Graph / FB / LINE -->
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://cagoooo.github.io/smes-photobooth/" />
 <meta property="og:title" content="石門國小 AI 智慧拍貼機 📸" />
 <meta property="og:description" content="桃園市龍潭區石門國民小學 — 手勢倒數自拍、可換邊框、雲端上傳、掃 QR Code 下載照片的土炮智慧拍貼機。" />
-<meta property="og:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-4" />
-<meta property="og:image:secure_url" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-4" />
+<meta property="og:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-5" />
+<meta property="og:image:secure_url" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-5" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:image:type" content="image/png" />
@@ -27,7 +27,7 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="石門國小 AI 智慧拍貼機 📸" />
 <meta name="twitter:description" content="桃園市龍潭區石門國民小學 — 手勢倒數自拍、可換邊框、雲端上傳、掃 QR Code 下載照片的土炮智慧拍貼機。" />
-<meta name="twitter:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-4" />
+<meta name="twitter:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-5" />
 <style>
   :root{
     --bg1:#fff7ec; --bg2:#ffe7d0; --ink:#3a2a18; --ink-soft:#7a6650;
@@ -330,6 +330,18 @@
     <button class="sec" data-g="4">🔳 四格拍貼</button>
   </div>
 
+  <!-- 活動模式選擇 -->
+  <div class="secrow" id="activityrow" style="padding-top:2px;align-items:center;gap:8px">
+    <span style="font-size:13px;font-weight:700;color:var(--ink-soft);display:inline-flex;align-items:center;gap:3px">🏷️ 活動：</span>
+    <select id="activitySelect" style="height:36px;border-radius:10px;border:1px solid var(--line);padding:0 26px 0 10px;font-size:13px;font-weight:700;color:var(--ink-soft);background:var(--card) url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 fill=%22%237a6650%22><path d=%22M2 4l4 4 4-4z%22/></svg>') no-repeat right 8px center;background-size:12px;appearance:none;-webkit-appearance:none;font-family:inherit;outline:none;cursor:pointer">
+      <option value="一般拍貼">一般拍貼</option>
+      <option value="115級畢業典禮">🎓 115級畢業典禮</option>
+      <option value="115週年校慶">🏫 115週年校慶</option>
+      <option value="鱻魚特色學園">🐟 鱻魚特色學園</option>
+      <option value="自訂活動...">➕ 自訂活動...</option>
+    </select>
+  </div>
+
   <!-- 控制 -->
   <div class="controls">
     <button class="shoot" id="btnShoot" disabled>📷 拍照</button>
@@ -414,12 +426,19 @@ const CONFIG = {
 };
 
 const $ = (s) => document.querySelector(s);
+const urlParams = new URLSearchParams(window.location.search);
+const queryActivity = urlParams.get('activity');
 const state = {
   stream: null, deviceId: localStorage.getItem("pb_cam") || null,
   frame: null, frameImg: null, seconds: 3, grid: 1, busy: false,
   gasUrl: localStorage.getItem("pb_gas") || CONFIG.gasUrl || "",
   gesture: false, gestureBusy: false, lastShot: null,
+  activity: queryActivity || localStorage.getItem("pb_activity") || "一般拍貼",
 };
+
+// 預載學校 LOGO 浮水印
+const logoImg = new Image();
+logoImg.src = "./logo.png";
 
 const els = {
   video: $("#video"), frameImg: $("#frameImg"), stage: $("#stage"),
@@ -569,7 +588,16 @@ function capture(){
   const ctx = cv.getContext("2d");
   drawVideoCover(ctx, 0, 0, out.w, out.h);
   if(state.frameImg) ctx.drawImage(state.frameImg, 0, 0, out.w, out.h);
-  return cv.toDataURL("image/jpeg", 0.92);
+  
+  // 畫學校 LOGO 浮水印（右下角）
+  if (logoImg.complete && logoImg.naturalWidth > 0) {
+    const logoSz = Math.round(out.w * 0.095);
+    const margin = Math.round(out.w * 0.02);
+    const lx = out.w - logoSz - margin;
+    const ly = out.h - logoSz - margin;
+    ctx.drawImage(logoImg, lx, ly, logoSz, logoSz);
+  }
+  return cv.toDataURL("image/jpeg", 0.82);
 }
 
 // 四格拍貼：連拍 4 張 → 2×2 拼進邊框透明窗內（白色間隙）→ 疊框
@@ -594,7 +622,16 @@ async function shootGrid(){
   const pos = [[WIN.x0,WIN.y0],[WIN.x0+cw,WIN.y0],[WIN.x0,WIN.y0+ch],[WIN.x0+cw,WIN.y0+ch]];
   cells.forEach((c,i)=> ctx.drawImage(c, pos[i][0] + gap/2, pos[i][1] + gap/2));
   if(state.frameImg) ctx.drawImage(state.frameImg, 0, 0, out.w, out.h);
-  state.lastShot = cv.toDataURL("image/jpeg", 0.92);
+  
+  // 畫學校 LOGO 浮水印（右下角）
+  if (logoImg.complete && logoImg.naturalWidth > 0) {
+    const logoSz = Math.round(out.w * 0.095);
+    const margin = Math.round(out.w * 0.02);
+    const lx = out.w - logoSz - margin;
+    const ly = out.h - logoSz - margin;
+    ctx.drawImage(logoImg, lx, ly, logoSz, logoSz);
+  }
+  state.lastShot = cv.toDataURL("image/jpeg", 0.82);
   showResult(state.lastShot);
 }
 
@@ -627,7 +664,7 @@ async function uploadShot(){
     const res = await fetch(state.gasUrl, {
       method:"POST",
       headers:{ "Content-Type":"text/plain;charset=utf-8" }, // 避免 CORS preflight
-      body: JSON.stringify({ image: state.lastShot, filename: fnameStamp(), token: CONFIG.uploadToken }),
+      body: JSON.stringify({ image: state.lastShot, filename: fnameStamp(), token: CONFIG.uploadToken, activity: state.activity }),
     });
     const data = await res.json();
     if(!data.ok) throw new Error(data.error || "後端回傳失敗");
@@ -746,18 +783,61 @@ $("#btnUpload").onclick = uploadShot;
 });
 document.addEventListener("keydown", e=>{ if(e.code==="Space" && !state.busy){ e.preventDefault(); shoot(); } });
 
+$("#activitySelect").onchange = (e) => {
+  if (e.target.value === "自訂活動...") {
+    const custom = prompt("請輸入自訂活動名稱：");
+    if (custom && custom.trim()) {
+      const name = custom.trim();
+      let exists = false;
+      for (let opt of e.target.options) {
+        if (opt.value === name) { exists = true; break; }
+      }
+      if (!exists) {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        e.target.insertBefore(opt, e.target.options[e.target.options.length - 1]);
+      }
+      e.target.value = name;
+      state.activity = name;
+      localStorage.setItem("pb_activity", name);
+    } else {
+      e.target.value = state.activity || "一般拍貼";
+    }
+  } else {
+    state.activity = e.target.value;
+    localStorage.setItem("pb_activity", e.target.value);
+  }
+};
+
 /* ---------- 啟動 ---------- */
 buildFrameThumbs();
 setSeconds(3);
 setGrid(1);
 startCamera(state.deviceId);
+
+// 初始化活動選單值
+if (state.activity) {
+  const sel = $("#activitySelect");
+  let exists = false;
+  for (let opt of sel.options) {
+    if (opt.value === state.activity) { exists = true; break; }
+  }
+  if (!exists) {
+    const opt = document.createElement("option");
+    opt.value = state.activity;
+    opt.textContent = state.activity;
+    sel.insertBefore(opt, sel.options[sel.options.length - 1]);
+  }
+  sel.value = state.activity;
+}
 </script>
 
 <!-- Service Worker 註冊 + 版本更新通知（prompt-to-refresh）-->
 <script>
 (function(){
   if(!('serviceWorker' in navigator)) return;
-  var APP_VERSION='2026.06.15-4';   // 與 sw.js 的 BUILD_VERSION 同步（bump-version.ps1 會一起改）
+  var APP_VERSION='2026.06.15-5';   // 與 sw.js 的 BUILD_VERSION 同步（bump-version.ps1 會一起改）
   var reloaded=false;
   function showBar(waiting){
     if(document.getElementById('sw-update-bar')) return;

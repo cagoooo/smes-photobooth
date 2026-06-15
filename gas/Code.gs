@@ -44,11 +44,28 @@ function doPost(e) {
     }
 
     var blob = Utilities.newBlob(Utilities.base64Decode(m[2]), m[1], filename);
-    var file = getFolder().createFile(blob);
+    
+    // 活動子資料夾邏輯
+    var activity = (body.activity || "").trim();
+    var mainFolder = getFolder();
+    var targetFolder = mainFolder;
+    if (activity && activity !== "一般拍貼" && activity !== "all") {
+      var subfolders = mainFolder.getFoldersByName(activity);
+      if (subfolders.hasNext()) {
+        targetFolder = subfolders.next();
+      } else {
+        targetFolder = mainFolder.createFolder(activity);
+        try {
+          targetFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        } catch (shareErr) {}
+      }
+    }
+    
+    var file = targetFolder.createFile(blob);
     try {
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     } catch (shareErr) { /* 網域政策限制公開分享時，照片仍存得進去 */ }
-
+    
     var id = file.getId();
     return json({
       ok: true,
@@ -96,10 +113,25 @@ function doGet(e) {
 function listPhotos(e) {
   try {
     var n = Math.min(parseInt((e.parameter && e.parameter.n) || "40", 10) || 40, CONFIG.LIST_MAX);
-    var it = getFolder().getFiles(), arr = [];
+    var activity = (e.parameter && e.parameter.activity || "").trim();
+    
+    var it;
+    if (activity && activity !== "all" && activity !== "一般拍貼") {
+      var mainFolder = getFolder();
+      var subfolders = mainFolder.getFoldersByName(activity);
+      if (subfolders.hasNext()) {
+        it = subfolders.next().getFiles();
+      } else {
+        return json({ ok: true, count: 0, photos: [] });
+      }
+    } else {
+      // 遞迴搜尋所有子資料夾（含根目錄）的照片
+      it = getFolder().searchFiles("mimeType contains 'image/' and trashed = false");
+    }
+    
+    var arr = [];
     while (it.hasNext()) {
       var f = it.next();
-      if (f.getMimeType().indexOf("image/") !== 0) continue;
       arr.push({ id: f.getId(), name: f.getName(), t: f.getDateCreated().getTime() });
     }
     arr.sort(function (a, b) { return b.t - a.t; });          // 最新優先

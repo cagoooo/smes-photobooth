@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>石門國小 即時拍貼牆 📸</title>
 <meta name="description" content="桃園市龍潭區石門國民小學 — 拍貼機即時相片牆，拍完馬上上大螢幕。" />
-<link rel="icon" href="./favicon.ico?v=2026.06.15-4" sizes="32x32" />
-<link rel="icon" href="./favicon.svg?v=2026.06.15-4" type="image/svg+xml" />
-<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2026.06.15-4" />
-<link rel="manifest" href="./manifest.json?v=2026.06.15-4" />
+<link rel="icon" href="./favicon.ico?v=2026.06.15-5" sizes="32x32" />
+<link rel="icon" href="./favicon.svg?v=2026.06.15-5" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2026.06.15-5" />
+<link rel="manifest" href="./manifest.json?v=2026.06.15-5" />
 
 <!-- Open Graph / FB / LINE -->
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://cagoooo.github.io/smes-photobooth/wall.html" />
 <meta property="og:title" content="石門國小 即時拍貼牆 📸" />
 <meta property="og:description" content="桃園市龍潭區石門國民小學 — 拍貼機即時相片牆，拍完馬上上大螢幕。" />
-<meta property="og:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-4" />
-<meta property="og:image:secure_url" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-4" />
+<meta property="og:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-5" />
+<meta property="og:image:secure_url" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-5" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:image:type" content="image/png" />
@@ -27,7 +27,7 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="石門國小 即時拍貼牆 📸" />
 <meta name="twitter:description" content="桃園市龍潭區石門國民小學 — 拍貼機即時相片牆，拍完馬上上大螢幕。" />
-<meta name="twitter:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-4" />
+<meta name="twitter:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-5" />
 <style>
   :root{
     --bg1:#16120c; --bg2:#241a10; --ink:#fff; --soft:#d9c7ad;
@@ -178,6 +178,15 @@ const meta = document.getElementById("meta");
 const seen = new Set();
 let first = true;
 
+// 讀取 URL 中的活動參數
+const urlParams = new URLSearchParams(window.location.search);
+const selectedActivity = urlParams.get('activity') || '';
+
+// 若有特定活動，動態更新副標題以顯示活動名稱
+if (selectedActivity && selectedActivity !== "all" && selectedActivity !== "一般拍貼") {
+  document.querySelector(".ttl small").textContent = "桃園市龍潭區石門國民小學 · " + selectedActivity;
+}
+
 function prepend(p, animate){
   const cell = document.createElement("div");
   cell.className = "cell" + (animate ? " new" : "");
@@ -190,7 +199,11 @@ function prepend(p, animate){
 
 async function poll(){
   try{
-    const r = await fetch(CONFIG.gasUrl + "?action=list&n=" + CONFIG.max, { cache:"no-store" });
+    let fetchUrl = CONFIG.gasUrl + "?action=list&n=" + CONFIG.max;
+    if (selectedActivity) {
+      fetchUrl += "&activity=" + encodeURIComponent(selectedActivity);
+    }
+    const r = await fetch(fetchUrl, { cache:"no-store" });
     const d = await r.json();
     if(!d.ok) throw new Error(d.error || "list failed");
     // d.photos 為最新優先；過濾出沒看過的，反序插入讓最新留在最前面
@@ -210,9 +223,13 @@ document.getElementById("fs").onclick = ()=>{
   if(document.fullscreenElement) document.exitFullscreen();
   else document.documentElement.requestFullscreen().catch(()=>{});
 };
-// QR → 拍貼機
+// QR → 拍貼機 (若有指定活動，自動讓手機端預選該活動)
 if(window.QRCode){
-  new QRCode(document.getElementById("qrc"), { text: CONFIG.boothUrl, width:120, height:120,
+  let targetUrl = CONFIG.boothUrl;
+  if (selectedActivity) {
+    targetUrl += "?activity=" + encodeURIComponent(selectedActivity);
+  }
+  new QRCode(document.getElementById("qrc"), { text: targetUrl, width:120, height:120,
     colorDark:"#3a2a18", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.M });
 }
 
