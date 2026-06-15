@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>石門國小 AI 智慧拍貼機 📸</title>
 <meta name="description" content="桃園市龍潭區石門國民小學 — 手勢倒數自拍、可換邊框、雲端上傳、掃 QR Code 下載照片的土炮智慧拍貼機。" />
-<link rel="icon" href="./favicon.ico?v=2026.06.15-5" sizes="32x32" />
-<link rel="icon" href="./favicon.svg?v=2026.06.15-5" type="image/svg+xml" />
-<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2026.06.15-5" />
-<link rel="manifest" href="./manifest.json?v=2026.06.15-5" />
+<link rel="icon" href="./favicon.ico?v=2026.06.15-6" sizes="32x32" />
+<link rel="icon" href="./favicon.svg?v=2026.06.15-6" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2026.06.15-6" />
+<link rel="manifest" href="./manifest.json?v=2026.06.15-6" />
 
 <!-- Open Graph / FB / LINE -->
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://cagoooo.github.io/smes-photobooth/" />
 <meta property="og:title" content="石門國小 AI 智慧拍貼機 📸" />
 <meta property="og:description" content="桃園市龍潭區石門國民小學 — 手勢倒數自拍、可換邊框、雲端上傳、掃 QR Code 下載照片的土炮智慧拍貼機。" />
-<meta property="og:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-5" />
-<meta property="og:image:secure_url" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-5" />
+<meta property="og:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-6" />
+<meta property="og:image:secure_url" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-6" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:image:type" content="image/png" />
@@ -27,7 +27,7 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="石門國小 AI 智慧拍貼機 📸" />
 <meta name="twitter:description" content="桃園市龍潭區石門國民小學 — 手勢倒數自拍、可換邊框、雲端上傳、掃 QR Code 下載照片的土炮智慧拍貼機。" />
-<meta name="twitter:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-5" />
+<meta name="twitter:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-6" />
 <style>
   :root{
     --bg1:#fff7ec; --bg2:#ffe7d0; --ink:#3a2a18; --ink-soft:#7a6650;
@@ -276,6 +276,262 @@
     background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;font-size:14px;
     opacity:0;transition:.25s;pointer-events:none;z-index:80;box-shadow:var(--shadow)}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ---- 預覽風格濾鏡 ---- */
+  .filter-preview-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    padding: 6px 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-bottom: 2px;
+  }
+  .filter-preview-row::-webkit-scrollbar { display: none; }
+  .f-prev-btn {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .f-prev-btn.sel {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
+  }
+
+  /* ---- 編輯工坊 ---- */
+  .thumb-selector-row {
+    margin-bottom: 12px;
+  }
+  .best-thumbs {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  .bthumb {
+    width: 60px;
+    height: 80px;
+    border-radius: 10px;
+    border: 2.5px solid transparent;
+    cursor: pointer;
+    overflow: hidden;
+    background: #000;
+    transition: transform 0.12s;
+  }
+  .bthumb.sel {
+    border-color: var(--brand);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(224, 138, 60, 0.3);
+  }
+  .bthumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .editor-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3/4;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #11161b;
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+    touch-action: none;
+  }
+  
+  .editor-container canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  #editorCanvas {
+    z-index: 1;
+  }
+  #doodleCanvas {
+    z-index: 2;
+    pointer-events: auto;
+    cursor: crosshair;
+  }
+  #stickerContainer {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+  
+  .sticker-element {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    border: 1.5px dashed transparent;
+    padding: 6px;
+    display: inline-block;
+    touch-action: none;
+    pointer-events: auto;
+    transform-origin: center center;
+  }
+  .sticker-element.active {
+    border-color: var(--brand);
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+  }
+  .sticker-text {
+    font-size: 38px;
+    line-height: 1.1;
+  }
+  .sticker-btn-del, .sticker-btn-scale {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: #fff;
+    border: 1px solid var(--line);
+    font-size: 10px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+  }
+  .sticker-element.active .sticker-btn-del,
+  .sticker-element.active .sticker-btn-scale {
+    display: flex;
+  }
+  .sticker-btn-del {
+    top: -8px;
+    left: -8px;
+  }
+  .sticker-btn-scale {
+    bottom: -8px;
+    right: -8px;
+    cursor: nwse-resize;
+  }
+  
+  .editor-section {
+    margin-bottom: 10px;
+    text-align: left;
+  }
+  .editor-section label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin-bottom: 5px;
+  }
+  
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 2px 0;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .btn-filter {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .btn-filter.sel {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+  }
+  
+  .doodle-control-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .btn-tool {
+    flex: 1;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-tool.sel {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
+  }
+  
+  .doodle-settings {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg);
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+  }
+  .color-palette {
+    display: flex;
+    gap: 8px;
+  }
+  .color-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  .color-dot.sel::after {
+    content: "✓";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .color-dot[data-color="#ffffff"].sel::after {
+    color: #000;
+  }
+  
+  .sticker-library {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 4px 2px;
+  }
+  .sticker-library::-webkit-scrollbar { display: none; }
+  .sticker-item {
+    font-size: 28px;
+    cursor: pointer;
+    padding: 4px;
+    transition: transform 0.12s;
+    user-select: none;
+  }
+  .sticker-item:active {
+    transform: scale(1.25);
+  }
 </style>
 </head>
 <body>
@@ -330,6 +586,15 @@
     <button class="sec" data-g="4">🔳 四格拍貼</button>
   </div>
 
+  <!-- 風格濾鏡（即時預覽） -->
+  <div class="filter-preview-row" id="filterPreviewRow">
+    <button class="f-prev-btn sel" data-f="normal">原圖</button>
+    <button class="f-prev-btn" data-f="soft">美顏</button>
+    <button class="f-prev-btn" data-f="warm">暖陽</button>
+    <button class="f-prev-btn" data-f="cool">冷調</button>
+    <button class="f-prev-btn" data-f="mono">黑白</button>
+  </div>
+
   <!-- 活動模式選擇 -->
   <div class="secrow" id="activityrow" style="padding-top:2px;align-items:center;gap:8px">
     <span style="font-size:13px;font-weight:700;color:var(--ink-soft);display:inline-flex;align-items:center;gap:3px">🏷️ 活動：</span>
@@ -354,6 +619,82 @@
   <a href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
      target="_blank" rel="noopener noreferrer" class="site-credit__author">阿凱老師</a>
 </footer>
+
+<!-- 編輯工坊彈窗 -->
+<div class="modal" id="editorModal">
+  <div class="sheet" style="max-width: 460px;">
+    <h2>🎨 相片編輯工坊</h2>
+    
+    <!-- 3選1 縮圖選擇列 (僅單張模式顯示) -->
+    <div class="thumb-selector-row" id="thumbSelectorRow" style="display: none;">
+      <p style="font-size: 12px; margin: 0 0 8px; color: var(--ink-soft); text-align: center;">請選擇一張最滿意的自拍照片：</p>
+      <div class="best-thumbs" id="bestThumbs"></div>
+    </div>
+    
+    <!-- 主要編輯畫布區 -->
+    <div class="editor-container" id="editorContainer">
+      <canvas id="editorCanvas"></canvas>
+      <canvas id="doodleCanvas"></canvas>
+      <div id="stickerContainer"></div>
+    </div>
+    
+    <!-- 風格濾鏡切換 -->
+    <div class="editor-section">
+      <label>✨ 照片濾鏡</label>
+      <div class="filter-row" id="editorFilterRow">
+        <button class="btn-filter sel" data-f="normal">原圖</button>
+        <button class="btn-filter" data-f="soft">美顏</button>
+        <button class="btn-filter" data-f="warm">暖陽</button>
+        <button class="btn-filter" data-f="cool">冷調</button>
+        <button class="btn-filter" data-f="mono">黑白</button>
+      </div>
+    </div>
+    
+    <!-- 塗鴉畫筆工具 -->
+    <div class="editor-section">
+      <div class="doodle-control-row">
+        <button class="btn-tool sel" id="toolDraw">🎨 畫筆</button>
+        <button class="btn-tool" id="toolErase">🧽 橡皮擦</button>
+        <button class="btn-tool" id="toolClear">🗑️ 清除塗鴉</button>
+      </div>
+      <div class="doodle-settings" id="doodleSettings">
+        <div class="color-palette" id="colorPalette">
+          <span class="color-dot sel" data-color="#ff4757" style="background:#ff4757"></span>
+          <span class="color-dot" data-color="#ffa502" style="background:#ffa502"></span>
+          <span class="color-dot" data-color="#2ed573" style="background:#2ed573"></span>
+          <span class="color-dot" data-color="#1e90ff" style="background:#1e90ff"></span>
+          <span class="color-dot" data-color="#373d3f" style="background:#373d3f"></span>
+          <span class="color-dot" data-color="#ffffff" style="background:#ffffff; border:1px solid #ddd"></span>
+        </div>
+        <div style="flex: 1; display: flex; align-items: center; gap: 8px;">
+          <span style="font-size:11px; color:var(--ink-soft)">粗細</span>
+          <input type="range" id="brushSize" min="2" max="25" value="6" style="flex:1; height:4px; accent-color:var(--brand)">
+        </div>
+      </div>
+    </div>
+    
+    <!-- 特色貼圖 -->
+    <div class="editor-section">
+      <label>🧸 特色貼圖 (點擊加入，可拖曳、縮放與旋轉)</label>
+      <div class="sticker-library" id="stickerLibrary">
+        <span class="sticker-item" data-val="🎓">🎓</span>
+        <span class="sticker-item" data-val="🐟">🐟</span>
+        <span class="sticker-item" data-val="🏫">🏫</span>
+        <span class="sticker-item" data-val="🎏">🎏</span>
+        <span class="sticker-item" data-val="❤️">❤️</span>
+        <span class="sticker-item" data-val="🌟">🌟</span>
+        <span class="sticker-item" data-val="🕶️">🕶️</span>
+        <span class="sticker-item" data-val="👑">👑</span>
+      </div>
+    </div>
+    
+    <!-- 完成與取消 -->
+    <div class="btnrow" style="margin-top: 14px;">
+      <button class="btn" id="btnEditCancel">↺ 重拍</button>
+      <button class="btn primary" id="btnEditConfirm">✅ 完成合成</button>
+    </div>
+  </div>
+</div>
 
 <!-- 結果彈窗 -->
 <div class="modal" id="resultModal">
@@ -425,6 +766,14 @@ const CONFIG = {
   frameWindow: { x0: 70, y0: 215, x1: 1010, y1: 1235 },
 };
 
+const FILTERS = {
+  normal: "none",
+  soft: "contrast(0.95) brightness(1.08) saturate(1.05) blur(0.3px)",
+  warm: "sepia(0.18) contrast(1.05) saturate(1.1) hue-rotate(-5deg)",
+  cool: "contrast(1.03) saturate(0.92) hue-rotate(8deg) brightness(1.02)",
+  mono: "grayscale(1) contrast(1.15) brightness(1.05)"
+};
+
 const $ = (s) => document.querySelector(s);
 const urlParams = new URLSearchParams(window.location.search);
 const queryActivity = urlParams.get('activity');
@@ -434,6 +783,16 @@ const state = {
   gasUrl: localStorage.getItem("pb_gas") || CONFIG.gasUrl || "",
   gesture: false, gestureBusy: false, lastShot: null,
   activity: queryActivity || localStorage.getItem("pb_activity") || "一般拍貼",
+  previewFilter: "normal", // 即時相機預覽濾鏡
+  editorFilter: "normal",  // 編輯工坊中的濾鏡
+  bestPics: [],            // 連拍 3 張的數組
+  selectedPicIdx: 2,       // 目前選取的 3選1 照片 index (預設第 3 張)
+  doodleTool: "draw",      // "draw" 或 "erase"
+  brushColor: "#ff4757",   // 畫筆顏色
+  brushSize: 6,            // 畫筆粗細
+  stickers: [],            // 放置在畫布上的貼圖對象陣列
+  lastRawGridPic: null,    // 四格原始拼圖底圖
+  editorBaseImg: null,     // 編輯底圖 Image 對象
 };
 
 // 預載學校 LOGO 浮水印
@@ -447,6 +806,22 @@ const els = {
   gBtn: $("#btnGesture"), gState: $("#gState"),
   gring: $("#gring"), gArc: $("#gringArc"),
   toast: $("#toast"),
+  filterPreviewRow: $("#filterPreviewRow"),
+  editorModal: $("#editorModal"),
+  thumbSelectorRow: $("#thumbSelectorRow"),
+  bestThumbs: $("#bestThumbs"),
+  editorCanvas: $("#editorCanvas"),
+  doodleCanvas: $("#doodleCanvas"),
+  stickerContainer: $("#stickerContainer"),
+  editorFilterRow: $("#editorFilterRow"),
+  toolDraw: $("#toolDraw"),
+  toolErase: $("#toolErase"),
+  toolClear: $("#toolClear"),
+  colorPalette: $("#colorPalette"),
+  brushSizeInput: $("#brushSize"),
+  stickerLibrary: $("#stickerLibrary"),
+  btnEditCancel: $("#btnEditCancel"),
+  btnEditConfirm: $("#btnEditConfirm"),
 };
 
 /* ---------- 小工具 ---------- */
@@ -570,18 +945,46 @@ function drawVideoCover(ctx, dx, dy, dw, dh){
   ctx.restore();
 }
 
+// 擷取無邊框、無濾鏡、無浮水印的原始相機畫面
+function captureRaw(){
+  const out = outSize();
+  const cv = document.createElement("canvas"); cv.width = out.w; cv.height = out.h;
+  const ctx = cv.getContext("2d");
+  drawVideoCover(ctx, 0, 0, out.w, out.h);
+  return cv.toDataURL("image/jpeg", 0.95);
+}
+
 async function shoot(){
   if(state.busy) return;
   state.busy = true; els.shoot.disabled = true;
-  if(state.grid === 4){ await shootGrid(); }
-  else {
-    await countdown(state.seconds); shutter();
-    state.lastShot = capture(); showResult(state.lastShot);
+  state.bestPics = [];
+  
+  if(state.grid === 4){
+    await shootGrid();
+  } else {
+    // 單張模式：連拍 3 次
+    els.hint.style.opacity = 1; els.hint.textContent = "📸 準備連拍 3 張（第 1 / 3 張）";
+    await countdown(state.seconds);
+    shutter();
+    state.bestPics.push(captureRaw());
+    await sleep(800);
+    
+    els.hint.textContent = "📸 準備連拍 3 張（第 2 / 3 張）";
+    shutter();
+    state.bestPics.push(captureRaw());
+    await sleep(800);
+    
+    els.hint.textContent = "📸 準備連拍 3 張（第 3 / 3 張）";
+    shutter();
+    state.bestPics.push(captureRaw());
+    
+    els.hint.textContent = "";
+    openEditor();
   }
-  els.hint.textContent = ""; state.busy = false; els.shoot.disabled = false;
+  state.busy = false; els.shoot.disabled = false;
 }
 
-// 單張：影片 cover-crop 鋪滿 + 疊框
+// 單張：影片 cover-crop 鋪滿 + 疊框 (備用，目前主合成走 compileFinalImage)
 function capture(){
   const out = outSize();
   const cv = document.createElement("canvas"); cv.width = out.w; cv.height = out.h;
@@ -600,7 +1003,7 @@ function capture(){
   return cv.toDataURL("image/jpeg", 0.82);
 }
 
-// 四格拍貼：連拍 4 張 → 2×2 拼進邊框透明窗內（白色間隙）→ 疊框
+// 四格拍貼：連拍 4 張 → 2×2 拼進邊框透明窗內（無濾鏡、無邊框、無 LOGO）
 async function shootGrid(){
   const out = outSize();
   const WIN = state.frameImg ? CONFIG.frameWindow : { x0:0, y0:0, x1:out.w, y1:out.h };
@@ -621,9 +1024,373 @@ async function shootGrid(){
   ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, out.w, out.h);   // 格子間隙底色
   const pos = [[WIN.x0,WIN.y0],[WIN.x0+cw,WIN.y0],[WIN.x0,WIN.y0+ch],[WIN.x0+cw,WIN.y0+ch]];
   cells.forEach((c,i)=> ctx.drawImage(c, pos[i][0] + gap/2, pos[i][1] + gap/2));
-  if(state.frameImg) ctx.drawImage(state.frameImg, 0, 0, out.w, out.h);
   
-  // 畫學校 LOGO 浮水印（右下角）
+  state.lastRawGridPic = cv.toDataURL("image/jpeg", 0.95);
+  els.hint.textContent = "";
+  openEditor();
+}
+
+/* ---------- 相片編輯工坊 ---------- */
+function openEditor(){
+  state.editorFilter = state.previewFilter || "normal";
+  els.editorModal.classList.add("show");
+  
+  // 初始化濾鏡按鈕選取
+  [...els.editorFilterRow.children].forEach(btn => {
+    btn.classList.toggle("sel", btn.dataset.f === state.editorFilter);
+  });
+  
+  // 初始化塗鴉 Canvas 狀態
+  state.doodleTool = "draw";
+  els.toolDraw.classList.add("sel");
+  els.toolErase.classList.remove("sel");
+  state.brushColor = els.colorPalette.querySelector(".color-dot.sel").dataset.color;
+  state.brushSize = parseInt(els.brushSizeInput.value, 10);
+  
+  const dctx = els.doodleCanvas.getContext("2d");
+  dctx.clearRect(0, 0, els.doodleCanvas.width, els.doodleCanvas.height);
+  
+  // 清除貼圖
+  els.stickerContainer.innerHTML = "";
+  state.stickers = [];
+  
+  if(state.grid === 1){
+    // 單張模式：顯示 3選1
+    els.thumbSelectorRow.style.display = "block";
+    renderThumbs();
+    state.selectedPicIdx = 2; // 預設選第 3 張
+    loadEditorImage(state.bestPics[2]);
+  } else {
+    // 四格模式：不顯示 3選1
+    els.thumbSelectorRow.style.display = "none";
+    loadEditorImage(state.lastRawGridPic);
+  }
+}
+
+function renderThumbs(){
+  els.bestThumbs.innerHTML = "";
+  state.bestPics.forEach((url, i) => {
+    const d = document.createElement("div");
+    d.className = "bthumb" + (i === 2 ? " sel" : "");
+    d.innerHTML = `<img src="${url}" alt="縮圖 ${i+1}">`;
+    d.onclick = () => {
+      [...els.bestThumbs.children].forEach((c, idx) => c.classList.toggle("sel", idx === i));
+      state.selectedPicIdx = i;
+      loadEditorImage(url);
+    };
+    els.bestThumbs.appendChild(d);
+  });
+}
+
+function loadEditorImage(dataUrl){
+  state.editorBaseImg = new Image();
+  state.editorBaseImg.onload = () => {
+    const out = outSize();
+    els.editorCanvas.width = out.w;
+    els.editorCanvas.height = out.h;
+    els.doodleCanvas.width = out.w;
+    els.doodleCanvas.height = out.h;
+    
+    // 清除塗鴉 Canvas (如果切換照片，清除原有塗鴉)
+    const dctx = els.doodleCanvas.getContext("2d");
+    dctx.clearRect(0, 0, els.doodleCanvas.width, els.doodleCanvas.height);
+    
+    drawEditorBase();
+  };
+  state.editorBaseImg.src = dataUrl;
+}
+
+function drawEditorBase(){
+  const cv = els.editorCanvas;
+  const ctx = cv.getContext("2d");
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.filter = FILTERS[state.editorFilter] || "none";
+  if(state.editorBaseImg){
+    ctx.drawImage(state.editorBaseImg, 0, 0, cv.width, cv.height);
+  }
+  ctx.filter = "none";
+}
+
+// 塗鴉 Canvas 事件監聽
+(function initDoodleEvents(){
+  const dcv = els.doodleCanvas;
+  let isDrawing = false;
+  let lastX = 0, lastY = 0;
+  
+  function getCanvasCoords(e){
+    const rect = dcv.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: ((clientX - rect.left) / rect.width) * dcv.width,
+      y: ((clientY - rect.top) / rect.height) * dcv.height
+    };
+  }
+  
+  dcv.addEventListener("pointerdown", (e) => {
+    // 必須是在 doodleCanvas 本身觸發，且沒在拖動貼圖
+    if(e.target !== dcv) return;
+    e.preventDefault();
+    deactivateAllStickers();
+    
+    isDrawing = true;
+    const coords = getCanvasCoords(e);
+    lastX = coords.x;
+    lastY = coords.y;
+  });
+  
+  dcv.addEventListener("pointermove", (e) => {
+    if(!isDrawing) return;
+    e.preventDefault();
+    const coords = getCanvasCoords(e);
+    const dctx = dcv.getContext("2d");
+    
+    dctx.beginPath();
+    dctx.moveTo(lastX, lastY);
+    dctx.lineTo(coords.x, coords.y);
+    
+    if(state.doodleTool === "erase"){
+      dctx.globalCompositeOperation = "destination-out";
+      dctx.lineWidth = state.brushSize * 2.5;
+    } else {
+      dctx.globalCompositeOperation = "source-over";
+      dctx.strokeStyle = state.brushColor;
+      dctx.lineWidth = state.brushSize;
+      dctx.lineCap = "round";
+      dctx.lineJoin = "round";
+    }
+    dctx.stroke();
+    
+    lastX = coords.x;
+    lastY = coords.y;
+  });
+  
+  const stopDrawing = () => { isDrawing = false; };
+  dcv.addEventListener("pointerup", stopDrawing);
+  dcv.addEventListener("pointercancel", stopDrawing);
+})();
+
+// 貼圖互動實作
+function addSticker(val){
+  const container = els.stickerContainer;
+  const id = "st_" + Date.now() + "_" + Math.floor(Math.random()*1000);
+  
+  const el = document.createElement("div");
+  el.className = "sticker-element";
+  el.id = id;
+  el.innerHTML = `
+    <div class="sticker-text">${val}</div>
+    <button class="sticker-btn-del" aria-label="刪除">✕</button>
+    <button class="sticker-btn-scale" aria-label="縮放旋轉">⤗</button>
+  `;
+  container.appendChild(el);
+  
+  const obj = {
+    id: id,
+    val: val,
+    x: container.clientWidth / 2,
+    y: container.clientHeight / 2,
+    scale: 1.0,
+    rotate: 0,
+    el: el
+  };
+  
+  state.stickers.push(obj);
+  updateStickerTransform(obj);
+  makeStickerInteractive(obj);
+  activateSticker(obj);
+}
+
+function updateStickerTransform(obj){
+  obj.el.style.left = `${obj.x}px`;
+  obj.el.style.top = `${obj.y}px`;
+  obj.el.style.transform = `translate(-50%, -50%) scale(${obj.scale}) rotate(${obj.rotate}deg)`;
+}
+
+function activateSticker(obj){
+  deactivateAllStickers();
+  obj.el.classList.add("active");
+}
+
+function deactivateAllStickers(){
+  state.stickers.forEach(s => s.el.classList.remove("active"));
+}
+
+function makeStickerInteractive(obj){
+  const el = obj.el;
+  const textEl = el.querySelector(".sticker-text");
+  const btnDel = el.querySelector(".sticker-btn-del");
+  const btnScale = el.querySelector(".sticker-btn-scale");
+  const container = els.stickerContainer;
+  
+  el.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    activateSticker(obj);
+  });
+  
+  btnDel.addEventListener("pointerdown", (e) => {
+    e.stopPropagation(); e.preventDefault();
+    el.remove();
+    state.stickers = state.stickers.filter(s => s.id !== obj.id);
+  });
+  
+  // 拖曳貼圖
+  let isDragging = false;
+  let startX = 0, startY = 0;
+  let stickerStartX = 0, stickerStartY = 0;
+  
+  textEl.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    isDragging = true;
+    textEl.setPointerCapture(e.pointerId);
+    startX = e.clientX;
+    startY = e.clientY;
+    stickerStartX = obj.x;
+    stickerStartY = obj.y;
+  });
+  
+  textEl.addEventListener("pointermove", (e) => {
+    if(!isDragging) return;
+    e.stopPropagation();
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    
+    // 計算容器 CSS 縮放比，換算實際 px
+    const scaleFactor = container.clientWidth / container.offsetWidth || 1;
+    
+    obj.x = stickerStartX + dx * scaleFactor;
+    obj.y = stickerStartY + dy * scaleFactor;
+    
+    // 限制貼圖中心不得超出畫布邊界過多
+    obj.x = Math.max(-20, Math.min(container.clientWidth + 20, obj.x));
+    obj.y = Math.max(-20, Math.min(container.clientHeight + 20, obj.y));
+    
+    updateStickerTransform(obj);
+  });
+  
+  const stopDrag = (e) => {
+    if(isDragging) {
+      isDragging = false;
+      try { textEl.releasePointerCapture(e.pointerId); } catch(err){}
+    }
+  };
+  textEl.addEventListener("pointerup", stopDrag);
+  textEl.addEventListener("pointercancel", stopDrag);
+  
+  // 縮放與旋轉 (以貼圖中心為原點進行極座標運算)
+  let isScaling = false;
+  let startAngle = 0;
+  let startDist = 1;
+  let startScale = 1;
+  let startRotate = 0;
+  
+  btnScale.addEventListener("pointerdown", (e) => {
+    e.stopPropagation(); e.preventDefault();
+    isScaling = true;
+    btnScale.setPointerCapture(e.pointerId);
+    
+    const rect = textEl.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    const dx = e.clientX - centerX;
+    const dy = e.clientY - centerY;
+    
+    startDist = Math.hypot(dx, dy) || 1;
+    startAngle = Math.atan2(dy, dx);
+    
+    startScale = obj.scale;
+    startRotate = obj.rotate;
+  });
+  
+  btnScale.addEventListener("pointermove", (e) => {
+    if(!isScaling) return;
+    e.stopPropagation();
+    
+    const rect = textEl.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    const dx = e.clientX - centerX;
+    const dy = e.clientY - centerY;
+    
+    const dist = Math.hypot(dx, dy) || 1;
+    const angle = Math.atan2(dy, dx);
+    
+    const scale = (dist / startDist) * startScale;
+    obj.scale = Math.max(0.3, Math.min(4.0, scale));
+    
+    const angleDiff = angle - startAngle;
+    obj.rotate = startRotate + (angleDiff * 180) / Math.PI;
+    
+    updateStickerTransform(obj);
+  });
+  
+  const stopScale = (e) => {
+    if(isScaling) {
+      isScaling = false;
+      try { btnScale.releasePointerCapture(e.pointerId); } catch(err){}
+    }
+  };
+  btnScale.addEventListener("pointerup", stopScale);
+  btnScale.addEventListener("pointercancel", stopScale);
+}
+
+// 最終影像合併與輸出
+function compileFinalImage(){
+  const out = outSize();
+  const cv = document.createElement("canvas"); cv.width = out.w; cv.height = out.h;
+  const ctx = cv.getContext("2d");
+  
+  // 1. 畫相機底圖並套用濾鏡
+  ctx.filter = FILTERS[state.editorFilter] || "none";
+  if(state.editorBaseImg){
+    ctx.drawImage(state.editorBaseImg, 0, 0, out.w, out.h);
+  }
+  ctx.filter = "none";
+  
+  // 2. 疊加手寫塗鴉
+  ctx.drawImage(els.doodleCanvas, 0, 0, out.w, out.h);
+  
+  // 3. 疊加貼圖
+  if(state.stickers.length > 0){
+    const container = els.stickerContainer;
+    // 因為貼圖是在 CSS 縮放後的 container 上操作的，換算成 1080x1440 等原始比例
+    const ratio = out.w / container.clientWidth;
+    
+    state.stickers.forEach(obj => {
+      const cx = obj.x * ratio;
+      const cy = obj.y * ratio;
+      
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate((obj.rotate * Math.PI) / 180);
+      
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      
+      // 字元大小換算
+      const fontSize = Math.round(38 * ratio * obj.scale);
+      ctx.font = `${fontSize}px "Microsoft JhengHei", system-ui, sans-serif`;
+      ctx.fillStyle = "#ffffff";
+      
+      // 陰影效果
+      ctx.shadowColor = "rgba(0,0,0,0.3)";
+      ctx.shadowBlur = 8 * ratio;
+      ctx.shadowOffsetX = 2 * ratio;
+      ctx.shadowOffsetY = 4 * ratio;
+      
+      ctx.fillText(obj.val, 0, 0);
+      ctx.restore();
+    });
+  }
+  
+  // 4. 疊加邊框
+  if(state.frameImg) {
+    ctx.drawImage(state.frameImg, 0, 0, out.w, out.h);
+  }
+  
+  // 5. 疊加 LOGO 浮水印
   if (logoImg.complete && logoImg.naturalWidth > 0) {
     const logoSz = Math.round(out.w * 0.095);
     const margin = Math.round(out.w * 0.02);
@@ -631,8 +1398,8 @@ async function shootGrid(){
     const ly = out.h - logoSz - margin;
     ctx.drawImage(logoImg, lx, ly, logoSz, logoSz);
   }
-  state.lastShot = cv.toDataURL("image/jpeg", 0.82);
-  showResult(state.lastShot);
+  
+  return cv.toDataURL("image/jpeg", 0.82);
 }
 
 /* ---------- 結果彈窗 ---------- */
@@ -768,6 +1535,81 @@ function saveSettings(){
 }
 
 /* ---------- 事件 ---------- */
+els.filterPreviewRow.onclick = (e) => {
+  const btn = e.target.closest(".f-prev-btn");
+  if (!btn) return;
+  [...els.filterPreviewRow.children].forEach(b => b.classList.toggle("sel", b === btn));
+  state.previewFilter = btn.dataset.f;
+  els.video.style.filter = FILTERS[state.previewFilter] || "none";
+};
+
+els.editorFilterRow.onclick = (e) => {
+  const btn = e.target.closest(".btn-filter");
+  if (!btn) return;
+  [...els.editorFilterRow.children].forEach(b => b.classList.toggle("sel", b === btn));
+  state.editorFilter = btn.dataset.f;
+  drawEditorBase();
+};
+
+els.toolDraw.onclick = () => {
+  state.doodleTool = "draw";
+  els.toolDraw.classList.add("sel");
+  els.toolErase.classList.remove("sel");
+};
+els.toolErase.onclick = () => {
+  state.doodleTool = "erase";
+  els.toolErase.classList.add("sel");
+  els.toolDraw.classList.remove("sel");
+};
+els.toolClear.onclick = () => {
+  if (confirm("確定要清除所有手寫塗鴉與線條嗎？")) {
+    const dctx = els.doodleCanvas.getContext("2d");
+    dctx.clearRect(0, 0, els.doodleCanvas.width, els.doodleCanvas.height);
+  }
+};
+
+els.colorPalette.onclick = (e) => {
+  const dot = e.target.closest(".color-dot");
+  if (!dot) return;
+  [...els.colorPalette.children].forEach(d => d.classList.toggle("sel", d === dot));
+  state.brushColor = dot.dataset.color;
+  if (state.doodleTool === "erase") {
+    state.doodleTool = "draw";
+    els.toolDraw.classList.add("sel");
+    els.toolErase.classList.remove("sel");
+  }
+};
+
+els.brushSizeInput.oninput = (e) => {
+  state.brushSize = parseInt(e.target.value, 10);
+};
+
+els.stickerLibrary.onclick = (e) => {
+  const item = e.target.closest(".sticker-item");
+  if (!item) return;
+  addSticker(item.dataset.val);
+};
+
+els.btnEditCancel.onclick = () => {
+  if (confirm("確定要放棄本張照片並重新拍攝嗎？")) {
+    els.editorModal.classList.remove("show");
+  }
+};
+
+els.btnEditConfirm.onclick = () => {
+  deactivateAllStickers();
+  state.lastShot = compileFinalImage();
+  els.editorModal.classList.remove("show");
+  showResult(state.lastShot);
+};
+
+els.editorModal.addEventListener("pointerdown", (e) => {
+  // 點選空白處取消選取貼圖
+  if (!e.target.closest(".sticker-element") && !e.target.closest(".sticker-item")) {
+    deactivateAllStickers();
+  }
+});
+
 els.shoot.onclick = shoot;
 els.gBtn.onclick = ()=> state.gesture ? disableGesture() : enableGesture();
 $("#secrow").onclick = (e)=>{ const b = e.target.closest(".sec"); if(b) setSeconds(+b.dataset.s); };
@@ -837,7 +1679,7 @@ if (state.activity) {
 <script>
 (function(){
   if(!('serviceWorker' in navigator)) return;
-  var APP_VERSION='2026.06.15-5';   // 與 sw.js 的 BUILD_VERSION 同步（bump-version.ps1 會一起改）
+  var APP_VERSION='2026.06.15-6';   // 與 sw.js 的 BUILD_VERSION 同步（bump-version.ps1 會一起改）
   var reloaded=false;
   function showBar(waiting){
     if(document.getElementById('sw-update-bar')) return;

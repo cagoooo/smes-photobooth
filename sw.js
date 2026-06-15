@@ -2,7 +2,7 @@
    - 版本鎖 prompt-to-refresh：偵測新版 → 進 waiting → 前端跳「重新整理」通知
    - 只攔同源 GET（index.html / frames）；相機、MediaPipe/QR 的 CDN、跨域 GAS 上傳一律不碰
 */
-const BUILD_VERSION = '2026.06.15-5';            // 每次部署改它（或跑 scripts/bump-version.ps1）
+const BUILD_VERSION = '2026.06.15-6';            // 每次部署改它（或跑 scripts/bump-version.ps1）
 const CACHE = 'photobooth-' + BUILD_VERSION;
 const PRECACHE = [
   './', './index.html', './wall.html',
