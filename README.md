@@ -17,6 +17,7 @@
 | ☁️ 雲端上傳 | 拍完一鍵上傳到學校 Google 雲端硬碟 |
 | 📱 QR Code 下載 | 上傳後產生 QR，手機掃描即可看圖、長按存檔 |
 | 💾 本機儲存 | 也能直接把照片存到電腦 |
+| 🔄 自動更新通知 | 部署新版後，已開著的平板會跳「重新整理載入」通知，不會卡舊版（Service Worker） |
 
 ---
 
@@ -100,6 +101,20 @@ python tools/make_frames.py     # Windows 若終端亂碼：PYTHONIOENCODING=utf
 ```
 
 ---
+
+## 🔄 更新網站內容（推新版）
+
+改完任何檔案（`index.html`、邊框…）後，**升版號**讓已開著的裝置自動跳「重新整理載入」通知：
+
+```powershell
+powershell -File scripts/bump-version.ps1 -Notes "這次改了什麼"   # 同步 version.json / sw.js / index.html 三處版本號
+git add -A; git commit -m "更新說明"; git push
+```
+
+> 原理：Service Worker 偵測到 `sw.js` 的版本號（byte）改變 → 安裝新版 → 提示使用者重新整理。
+> **沒升版號，通知不會出現**（瀏覽器當成同一版）。GitHub Pages 對 `sw.js` 有約 10 分鐘 CDN 快取，剛部署的前 10 分鐘可能還偵測不到，屬正常窗口。
+>
+> 改「後端」(`gas/Code.gs`) 不必升版——那是用 clasp 部署、跟前端版本無關。
 
 ## 🧯 疑難排解
 
