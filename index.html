@@ -188,6 +188,12 @@
     <button class="sec" data-s="10">10 秒</button>
   </div>
 
+  <!-- 格數（單張 / 四格拍貼）-->
+  <div class="secrow" id="gridrow" style="padding-top:2px">
+    <button class="sec sel" data-g="1">🖼️ 單張</button>
+    <button class="sec" data-g="4">🔳 四格拍貼</button>
+  </div>
+
   <!-- 控制 -->
   <div class="controls">
     <button class="shoot" id="btnShoot" disabled>📷 拍照</button>
@@ -266,12 +272,15 @@ const CONFIG = {
   // 後端 GAS Web App /exec 預設網址：任何裝置打開即可上傳，免進 ⚙️ 設定。
   // 要改後端時不用動這裡（clasp update-deployment 會保留同一網址）；⚙️ 設定仍可臨時覆蓋。
   gasUrl: "https://script.google.com/macros/s/AKfycbz21fLRfwwpESRSOz4VBfJnIG5SFZzT5JFjSjqSvgWDd15aDVlZmvlPHQch_8dawOFn/exec",
+  uploadToken: "smes-pb-7n3x9q2",   // 與 GAS CONFIG.UPLOAD_TOKEN 一致（擋亂槍 bot）
+  // 內建 6 款邊框的中央透明窗座標（= make_frames.py 的 WIN）；四格拼貼用它把格子畫在窗內
+  frameWindow: { x0: 70, y0: 215, x1: 1010, y1: 1235 },
 };
 
 const $ = (s) => document.querySelector(s);
 const state = {
   stream: null, deviceId: localStorage.getItem("pb_cam") || null,
-  frame: null, frameImg: null, seconds: 3, busy: false,
+  frame: null, frameImg: null, seconds: 3, grid: 1, busy: false,
   gasUrl: localStorage.getItem("pb_gas") || CONFIG.gasUrl || "",
   gesture: false, gestureBusy: false, lastShot: null,
 };
@@ -369,46 +378,88 @@ function selectFrame(i){
 }
 
 /* ---------- 倒數 + 拍照 ---------- */
+const sleep = (ms)=>new Promise(r=>setTimeout(r, ms));
 function setSeconds(s){
   state.seconds = s;
   [...$("#secrow").children].forEach(b=>b.classList.toggle("sel", +b.dataset.s===s));
 }
-async function shoot(){
-  if(state.busy) return; state.busy = true; els.shoot.disabled = true;
-  for(let n = state.seconds; n > 0; n--){
+function setGrid(g){
+  state.grid = g;
+  [...$("#gridrow").children].forEach(b=>b.classList.toggle("sel", +b.dataset.g===g));
+}
+async function countdown(secs){
+  for(let n = secs; n > 0; n--){
     els.count.textContent = n; els.count.classList.remove("show");
     void els.count.offsetWidth; els.count.classList.add("show");
-    beep(660, .12, .12);
-    await new Promise(r=>setTimeout(r, 1000));
+    beep(660, .12, .12); await sleep(1000);
   }
   els.count.classList.remove("show");
-  // 白閃 + 快門聲
+}
+function shutter(){
   els.flash.classList.remove("go"); void els.flash.offsetWidth; els.flash.classList.add("go");
   beep(1200, .08, .18); setTimeout(()=>beep(440,.12,.12), 60);
-  const dataUrl = capture();
-  state.lastShot = dataUrl;
-  showResult(dataUrl);
-  state.busy = false; els.shoot.disabled = false;
 }
-function capture(){
+function outSize(){
+  return state.frameImg ? { w: state.frameImg.naturalWidth, h: state.frameImg.naturalHeight }
+                        : CONFIG.defaultSize;
+}
+// 影片 cover-crop 畫進 dest 矩形（水平鏡像，跟預覽一致）
+function drawVideoCover(ctx, dx, dy, dw, dh){
   const v = els.video;
-  const out = state.frameImg
-    ? { w: state.frameImg.naturalWidth, h: state.frameImg.naturalHeight }
-    : CONFIG.defaultSize;
-  const cv = document.createElement("canvas");
-  cv.width = out.w; cv.height = out.h;
-  const ctx = cv.getContext("2d");
-  // 影片 cover-crop 進畫布（並水平鏡像，跟預覽一致）
-  const cAR = out.w / out.h, vAR = (v.videoWidth||4) / (v.videoHeight||3);
+  const cAR = dw / dh, vAR = (v.videoWidth||4) / (v.videoHeight||3);
   let sw, sh, sx, sy;
   if(vAR > cAR){ sh = v.videoHeight; sw = sh*cAR; sx = (v.videoWidth-sw)/2; sy = 0; }
   else { sw = v.videoWidth; sh = sw/cAR; sx = 0; sy = (v.videoHeight-sh)/2; }
-  ctx.save(); ctx.translate(out.w,0); ctx.scale(-1,1);
-  ctx.drawImage(v, sx, sy, sw, sh, 0, 0, out.w, out.h);
+  ctx.save(); ctx.translate(dx+dw, dy); ctx.scale(-1,1);
+  ctx.drawImage(v, sx, sy, sw, sh, 0, 0, dw, dh);
   ctx.restore();
-  // 疊邊框
+}
+
+async function shoot(){
+  if(state.busy) return;
+  state.busy = true; els.shoot.disabled = true;
+  if(state.grid === 4){ await shootGrid(); }
+  else {
+    await countdown(state.seconds); shutter();
+    state.lastShot = capture(); showResult(state.lastShot);
+  }
+  els.hint.textContent = ""; state.busy = false; els.shoot.disabled = false;
+}
+
+// 單張：影片 cover-crop 鋪滿 + 疊框
+function capture(){
+  const out = outSize();
+  const cv = document.createElement("canvas"); cv.width = out.w; cv.height = out.h;
+  const ctx = cv.getContext("2d");
+  drawVideoCover(ctx, 0, 0, out.w, out.h);
   if(state.frameImg) ctx.drawImage(state.frameImg, 0, 0, out.w, out.h);
   return cv.toDataURL("image/jpeg", 0.92);
+}
+
+// 四格拍貼：連拍 4 張 → 2×2 拼進邊框透明窗內（白色間隙）→ 疊框
+async function shootGrid(){
+  const out = outSize();
+  const WIN = state.frameImg ? CONFIG.frameWindow : { x0:0, y0:0, x1:out.w, y1:out.h };
+  const gap = 16;
+  const cw = Math.round((WIN.x1 - WIN.x0) / 2), ch = Math.round((WIN.y1 - WIN.y0) / 2);
+  const cells = [];
+  for(let i = 0; i < 4; i++){
+    els.hint.style.opacity = 1; els.hint.textContent = `🔳 四格拍貼　第 ${i+1} / 4 張`;
+    await countdown(Math.max(2, state.seconds || 2));
+    shutter();
+    const c = document.createElement("canvas"); c.width = cw - gap; c.height = ch - gap;
+    drawVideoCover(c.getContext("2d"), 0, 0, cw - gap, ch - gap);
+    cells.push(c);
+    await sleep(450);
+  }
+  const cv = document.createElement("canvas"); cv.width = out.w; cv.height = out.h;
+  const ctx = cv.getContext("2d");
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, out.w, out.h);   // 格子間隙底色
+  const pos = [[WIN.x0,WIN.y0],[WIN.x0+cw,WIN.y0],[WIN.x0,WIN.y0+ch],[WIN.x0+cw,WIN.y0+ch]];
+  cells.forEach((c,i)=> ctx.drawImage(c, pos[i][0] + gap/2, pos[i][1] + gap/2));
+  if(state.frameImg) ctx.drawImage(state.frameImg, 0, 0, out.w, out.h);
+  state.lastShot = cv.toDataURL("image/jpeg", 0.92);
+  showResult(state.lastShot);
 }
 
 /* ---------- 結果彈窗 ---------- */
@@ -440,7 +491,7 @@ async function uploadShot(){
     const res = await fetch(state.gasUrl, {
       method:"POST",
       headers:{ "Content-Type":"text/plain;charset=utf-8" }, // 避免 CORS preflight
-      body: JSON.stringify({ image: state.lastShot, filename: fnameStamp() }),
+      body: JSON.stringify({ image: state.lastShot, filename: fnameStamp(), token: CONFIG.uploadToken }),
     });
     const data = await res.json();
     if(!data.ok) throw new Error(data.error || "後端回傳失敗");
@@ -547,6 +598,7 @@ function saveSettings(){
 els.shoot.onclick = shoot;
 els.gBtn.onclick = ()=> state.gesture ? disableGesture() : enableGesture();
 $("#secrow").onclick = (e)=>{ const b = e.target.closest(".sec"); if(b) setSeconds(+b.dataset.s); };
+$("#gridrow").onclick = (e)=>{ const b = e.target.closest(".sec"); if(b) setGrid(+b.dataset.g); };
 $("#btnSettings").onclick = openSettings;
 $("#btnSettingsClose").onclick = ()=> $("#settingsModal").classList.remove("show");
 $("#btnSettingsSave").onclick = saveSettings;
@@ -561,6 +613,7 @@ document.addEventListener("keydown", e=>{ if(e.code==="Space" && !state.busy){ e
 /* ---------- 啟動 ---------- */
 buildFrameThumbs();
 setSeconds(3);
+setGrid(1);
 startCamera(state.deviceId);
 </script>
 
@@ -568,7 +621,7 @@ startCamera(state.deviceId);
 <script>
 (function(){
   if(!('serviceWorker' in navigator)) return;
-  var APP_VERSION='2026.06.15-1';   // 與 sw.js 的 BUILD_VERSION 同步（bump-version.ps1 會一起改）
+  var APP_VERSION='2026.06.15-2';   // 與 sw.js 的 BUILD_VERSION 同步（bump-version.ps1 會一起改）
   var reloaded=false;
   function showBar(waiting){
     if(document.getElementById('sw-update-bar')) return;

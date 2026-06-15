@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>石門國小 即時拍貼牆 📸</title>
+<meta name="description" content="桃園市龍潭區石門國民小學 — 拍貼機即時相片牆，拍完馬上上大螢幕。" />
+<style>
+  :root{
+    --bg1:#16120c; --bg2:#241a10; --ink:#fff; --soft:#d9c7ad;
+    --brand:#f0a44a; --line:rgba(255,255,255,.1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(120% 90% at 50% -10%,#3a2a18 0%,transparent 55%),
+      linear-gradient(160deg,var(--bg1),var(--bg2));
+    min-height:100dvh;overflow-x:hidden;
+  }
+  /* 頂列 */
+  header{display:flex;align-items:center;gap:14px;padding:16px 22px;position:sticky;top:0;z-index:5;
+    background:linear-gradient(rgba(20,14,8,.92),rgba(20,14,8,.55));backdrop-filter:blur(6px)}
+  .logo{font-size:30px}
+  .ttl{font-weight:800;font-size:23px;letter-spacing:.5px;line-height:1.1}
+  .ttl small{display:block;font-weight:600;font-size:12px;color:var(--soft);letter-spacing:2px;margin-top:3px}
+  .sp{flex:1}
+  .live{display:flex;align-items:center;gap:7px;font-size:14px;color:var(--soft)}
+  .dot{width:10px;height:10px;border-radius:50%;background:#34d36b;box-shadow:0 0 0 0 rgba(52,211,107,.6);
+    animation:pulse 1.8s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,211,107,.6)}70%{box-shadow:0 0 0 12px rgba(52,211,107,0)}100%{box-shadow:0 0 0 0 rgba(52,211,107,0)}}
+  .fsbtn{width:44px;height:44px;border-radius:13px;border:1px solid var(--line);background:rgba(255,255,255,.06);
+    color:#fff;font-size:20px;cursor:pointer}
+  .fsbtn:active{transform:scale(.93)}
+
+  /* 相片格 */
+  .grid{display:grid;gap:14px;padding:18px 22px 120px;
+    grid-template-columns:repeat(auto-fill,minmax(clamp(150px,15vw,260px),1fr))}
+  .cell{position:relative;aspect-ratio:3/4;border-radius:16px;overflow:hidden;background:#0d0a07;
+    box-shadow:0 12px 30px -10px rgba(0,0,0,.6);border:1px solid var(--line)}
+  .cell img{width:100%;height:100%;object-fit:cover;display:block}
+  .cell.new{animation:popin .8s cubic-bezier(.2,.9,.3,1.2)}
+  @keyframes popin{0%{opacity:0;transform:scale(.6) translateY(20px)}100%{opacity:1;transform:none}}
+
+  /* 空狀態 */
+  .empty{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+    gap:22px;text-align:center;padding:24px}
+  .empty.show{display:flex}
+  .empty h2{font-size:28px;margin:0}
+  .empty p{color:var(--soft);font-size:16px;margin:0}
+
+  /* QR 卡（角落，全螢幕也顯示）*/
+  .qr{position:fixed;right:22px;bottom:22px;z-index:6;background:#fff;color:#3a2a18;border-radius:18px;
+    padding:14px 14px 10px;text-align:center;box-shadow:0 16px 40px -10px rgba(0,0,0,.6);width:172px}
+  .qr #qrc{display:flex;justify-content:center}
+  .qr #qrc img,.qr #qrc canvas{border-radius:8px}
+  .qr .cap{font-size:14px;font-weight:800;margin-top:8px;color:#c66f23}
+  .qr .cap small{display:block;font-weight:600;color:#7a6650;font-size:11px;margin-top:2px}
+
+  footer{position:fixed;left:16px;bottom:14px;font-size:12px;color:rgba(255,255,255,.4);z-index:6}
+  footer a{color:inherit}
+  :fullscreen footer{display:none}
+</style>
+</head>
+<body>
+  <header>
+    <span class="logo">📸</span>
+    <div class="ttl">石門國小 即時拍貼牆<small>桃園市龍潭區石門國民小學 · 鱻魚特色學園</small></div>
+    <span class="sp"></span>
+    <div class="live"><span class="dot"></span><span id="meta">連線中…</span></div>
+    <button class="fsbtn" id="fs" title="全螢幕">⛶</button>
+  </header>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="empty" id="empty">
+    <h2>🎬 還沒有照片</h2>
+    <p>快到拍貼機拍下第一張，馬上會出現在這面牆上！</p>
+  </div>
+
+  <div class="qr">
+    <div id="qrc"></div>
+    <div class="cap">📱 掃我來拍貼<small>大家一起上牆</small></div>
+  </div>
+
+  <footer>Made with ❤️ by <a href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5" target="_blank" rel="noopener noreferrer">阿凱老師</a></footer>
+
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+<script>
+const CONFIG = {
+  gasUrl: "https://script.google.com/macros/s/AKfycbz21fLRfwwpESRSOz4VBfJnIG5SFZzT5JFjSjqSvgWDd15aDVlZmvlPHQch_8dawOFn/exec",
+  boothUrl: "https://cagoooo.github.io/smes-photobooth/",  // QR 指向拍貼機
+  pollMs: 15000,   // 每 15 秒抓一次最新照片
+  max: 80,         // 牆上最多保留張數
+};
+const grid = document.getElementById("grid");
+const meta = document.getElementById("meta");
+const seen = new Set();
+let first = true;
+
+function prepend(p, animate){
+  const cell = document.createElement("div");
+  cell.className = "cell" + (animate ? " new" : "");
+  const img = document.createElement("img");
+  img.loading = "eager"; img.decoding = "async"; img.alt = "拍貼"; img.src = p.url;
+  cell.appendChild(img);
+  grid.insertBefore(cell, grid.firstChild);
+  while(grid.children.length > CONFIG.max) grid.removeChild(grid.lastChild);
+}
+
+async function poll(){
+  try{
+    const r = await fetch(CONFIG.gasUrl + "?action=list&n=" + CONFIG.max, { cache:"no-store" });
+    const d = await r.json();
+    if(!d.ok) throw new Error(d.error || "list failed");
+    // d.photos 為最新優先；過濾出沒看過的，反序插入讓最新留在最前面
+    const fresh = d.photos.filter(p => !seen.has(p.id));
+    fresh.slice().reverse().forEach(p => { seen.add(p.id); prepend(p, !first); });
+    document.getElementById("empty").classList.toggle("show", seen.size === 0);
+    const now = new Date();
+    meta.textContent = `${seen.size} 張 · 更新於 ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
+    first = false;
+  }catch(e){
+    meta.textContent = "連線失敗，重試中…";
+  }
+}
+
+// 全螢幕
+document.getElementById("fs").onclick = ()=>{
+  if(document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(()=>{});
+};
+// QR → 拍貼機
+if(window.QRCode){
+  new QRCode(document.getElementById("qrc"), { text: CONFIG.boothUrl, width:120, height:120,
+    colorDark:"#3a2a18", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.M });
+}
+
+poll();
+setInterval(poll, CONFIG.pollMs);
+</script>
+</body>
+</html>

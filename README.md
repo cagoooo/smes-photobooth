@@ -17,6 +17,9 @@
 | ☁️ 雲端上傳 | 拍完一鍵上傳到學校 Google 雲端硬碟 |
 | 📱 QR Code 下載 | 上傳後產生 QR，手機掃描即可看圖、長按存檔 |
 | 💾 本機儲存 | 也能直接把照片存到電腦 |
+| 🔳 四格拍貼 | 連拍 4 張自動拼成經典四格拍貼（單張 / 四格可切換） |
+| 🖼️ 即時相片牆 | 投影頁 [`wall.html`](wall.html)，拍完即上大螢幕、最新優先、附掃碼拍貼 QR |
+| 🔒 防濫用 | 上傳需 token + 全站限流（40 張/分）+ 檔案大小上限，避免 `/exec` 被灌爆雲端硬碟 |
 | 🔄 自動更新通知 | 部署新版後，已開著的平板會跳「重新整理載入」通知，不會卡舊版（Service Worker） |
 
 ---
@@ -101,6 +104,19 @@ python tools/make_frames.py     # Windows 若終端亂碼：PYTHONIOENCODING=utf
 ```
 
 ---
+
+## 🖼️ 即時相片牆（投影用）
+
+活動現場用單槍投影打開 👉 https://cagoooo.github.io/smes-photobooth/wall.html
+
+- 每 15 秒自動抓最新照片、**最新優先**，新照片動畫進場
+- 右上 ⛶ 全螢幕；右下 QR 讓觀眾掃碼直接去拍貼
+- 資料來自後端 `?action=list`（唯讀，照片本就是公開連結）
+
+## 🔒 防濫用（已內建）
+
+因為 `/exec` 公開，後端 `Code.gs` 已內建三層保護：**上傳需 token**（前端 `CONFIG.uploadToken` 與後端 `CONFIG.UPLOAD_TOKEN` 一致）＋**全站限流**（預設 40 張/分鐘）＋**檔案大小上限**（8MB）。
+想更嚴格可改 `Code.gs` 的 `RATE_MAX` / `RATE_WINDOW_SEC`，或日後加 Cloudflare Turnstile 人機驗證（見 skill `cloudflare-turnstile-integration`）。
 
 ## 🔄 更新網站內容（推新版）
 
