@@ -1,4 +1,4 @@
 {
-    "version":  "2026.06.15-3",
-    "notes":  "新增全套 PWA Favicons 與社群分享 OG 預覽圖"
+    "version":  "2026.06.15-4",
+    "notes":  "優化行動與平板端 RWD 響應式排版，加入 Safe Area 與手機橫向提示"
 }

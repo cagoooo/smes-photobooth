@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>石門國小 即時拍貼牆 📸</title>
 <meta name="description" content="桃園市龍潭區石門國民小學 — 拍貼機即時相片牆，拍完馬上上大螢幕。" />
-<link rel="icon" href="./favicon.ico?v=2026.06.15-3" sizes="32x32" />
-<link rel="icon" href="./favicon.svg?v=2026.06.15-3" type="image/svg+xml" />
-<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2026.06.15-3" />
-<link rel="manifest" href="./manifest.json?v=2026.06.15-3" />
+<link rel="icon" href="./favicon.ico?v=2026.06.15-4" sizes="32x32" />
+<link rel="icon" href="./favicon.svg?v=2026.06.15-4" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2026.06.15-4" />
+<link rel="manifest" href="./manifest.json?v=2026.06.15-4" />
 
 <!-- Open Graph / FB / LINE -->
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://cagoooo.github.io/smes-photobooth/wall.html" />
 <meta property="og:title" content="石門國小 即時拍貼牆 📸" />
 <meta property="og:description" content="桃園市龍潭區石門國民小學 — 拍貼機即時相片牆，拍完馬上上大螢幕。" />
-<meta property="og:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-3" />
-<meta property="og:image:secure_url" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-3" />
+<meta property="og:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-4" />
+<meta property="og:image:secure_url" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-4" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:image:type" content="image/png" />
@@ -27,7 +27,7 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="石門國小 即時拍貼牆 📸" />
 <meta name="twitter:description" content="桃園市龍潭區石門國民小學 — 拍貼機即時相片牆，拍完馬上上大螢幕。" />
-<meta name="twitter:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-3" />
+<meta name="twitter:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-4" />
 <style>
   :root{
     --bg1:#16120c; --bg2:#241a10; --ink:#fff; --soft:#d9c7ad;
@@ -74,15 +74,72 @@
 
   /* QR 卡（角落，全螢幕也顯示）*/
   .qr{position:fixed;right:22px;bottom:22px;z-index:6;background:#fff;color:#3a2a18;border-radius:18px;
-    padding:14px 14px 10px;text-align:center;box-shadow:0 16px 40px -10px rgba(0,0,0,.6);width:172px}
+    padding:14px 14px 10px;text-align:center;box-shadow:0 16px 40px -10px rgba(0,0,0,.6);width:172px;
+    transition: transform 0.2s, opacity 0.2s;}
   .qr #qrc{display:flex;justify-content:center}
-  .qr #qrc img,.qr #qrc canvas{border-radius:8px}
+  .qr #qrc img,.qr #qrc canvas{border-radius:8px;max-width:100%;height:auto}
   .qr .cap{font-size:14px;font-weight:800;margin-top:8px;color:#c66f23}
   .qr .cap small{display:block;font-weight:600;color:#7a6650;font-size:11px;margin-top:2px}
 
   footer{position:fixed;left:16px;bottom:14px;font-size:12px;color:rgba(255,255,255,.4);z-index:6}
   footer a{color:inherit}
   :fullscreen footer{display:none}
+
+  /* 投影牆響應式微調 */
+  @media (max-width: 768px) {
+    header {
+      padding: 12px 16px;
+    }
+    .ttl {
+      font-size: 19px;
+    }
+    .ttl small {
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+    .qr {
+      width: 140px;
+      padding: 10px 10px 8px;
+      right: 14px;
+      bottom: 14px;
+      border-radius: 14px;
+    }
+    .qr .cap {
+      font-size: 12px;
+      margin-top: 6px;
+    }
+    .qr .cap small {
+      font-size: 10px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .qr {
+      display: none; /* 手機端不需要看掃碼引導 */
+    }
+    .grid {
+      padding: 12px 14px 80px;
+      gap: 10px;
+    }
+    header {
+      padding: 10px 12px;
+    }
+    .logo {
+      font-size: 24px;
+    }
+    .ttl {
+      font-size: 17px;
+    }
+    .live {
+      font-size: 12px;
+    }
+    .fsbtn {
+      width: 36px;
+      height: 36px;
+      font-size: 16px;
+      border-radius: 10px;
+    }
+  }
 </style>
 </head>
 <body>

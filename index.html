@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>石門國小 AI 智慧拍貼機 📸</title>
 <meta name="description" content="桃園市龍潭區石門國民小學 — 手勢倒數自拍、可換邊框、雲端上傳、掃 QR Code 下載照片的土炮智慧拍貼機。" />
-<link rel="icon" href="./favicon.ico?v=2026.06.15-3" sizes="32x32" />
-<link rel="icon" href="./favicon.svg?v=2026.06.15-3" type="image/svg+xml" />
-<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2026.06.15-3" />
-<link rel="manifest" href="./manifest.json?v=2026.06.15-3" />
+<link rel="icon" href="./favicon.ico?v=2026.06.15-4" sizes="32x32" />
+<link rel="icon" href="./favicon.svg?v=2026.06.15-4" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2026.06.15-4" />
+<link rel="manifest" href="./manifest.json?v=2026.06.15-4" />
 
 <!-- Open Graph / FB / LINE -->
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://cagoooo.github.io/smes-photobooth/" />
 <meta property="og:title" content="石門國小 AI 智慧拍貼機 📸" />
 <meta property="og:description" content="桃園市龍潭區石門國民小學 — 手勢倒數自拍、可換邊框、雲端上傳、掃 QR Code 下載照片的土炮智慧拍貼機。" />
-<meta property="og:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-3" />
-<meta property="og:image:secure_url" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-3" />
+<meta property="og:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-4" />
+<meta property="og:image:secure_url" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-4" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:image:type" content="image/png" />
@@ -27,7 +27,7 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="石門國小 AI 智慧拍貼機 📸" />
 <meta name="twitter:description" content="桃園市龍潭區石門國民小學 — 手勢倒數自拍、可換邊框、雲端上傳、掃 QR Code 下載照片的土炮智慧拍貼機。" />
-<meta name="twitter:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-3" />
+<meta name="twitter:image" content="https://cagoooo.github.io/smes-photobooth/og-preview.png?v=2026.06.15-4" />
 <style>
   :root{
     --bg1:#fff7ec; --bg2:#ffe7d0; --ink:#3a2a18; --ink-soft:#7a6650;
@@ -45,7 +45,111 @@
       linear-gradient(160deg,var(--bg1),var(--bg2));
     min-height:100dvh; -webkit-tap-highlight-color:transparent;
   }
-  .wrap{max-width:560px;margin:0 auto;padding:14px 14px 0;}
+  .wrap{
+    max-width:560px;
+    margin:0 auto;
+    padding:
+      calc(14px + env(safe-area-inset-top))
+      calc(14px + env(safe-area-inset-right))
+      0
+      calc(14px + env(safe-area-inset-left));
+  }
+
+  /* 橫向提示遮罩 */
+  .orientation-warning {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(120% 90% at 12% -10%, #fff 0%, transparent 55%),
+                linear-gradient(160deg, var(--bg1), var(--bg2));
+    color: var(--ink);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  .orientation-warning__content {
+    max-width: 320px;
+  }
+  .orientation-warning__icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    animation: rotate-phone 2.2s infinite ease-in-out;
+    display: inline-block;
+  }
+  .orientation-warning h3 {
+    margin: 0 0 10px;
+    font-size: 21px;
+    font-weight: 800;
+  }
+  .orientation-warning p {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin: 0;
+  }
+  @keyframes rotate-phone {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(-90deg); }
+    100% { transform: rotate(0deg); }
+  }
+
+  /* 行動端小螢幕自適應 (如 iPhone SE 等寬度 <= 360px 裝置) */
+  @media (max-width: 360px) {
+    .wrap {
+      padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) 0 calc(8px + env(safe-area-inset-left));
+    }
+    header.top {
+      padding: 4px 0 8px;
+    }
+    .logo {
+      font-size: 22px;
+    }
+    .ttl {
+      font-size: 16px;
+    }
+    .ttl small {
+      font-size: 10px;
+      letter-spacing: 0.8px;
+    }
+    .iconbtn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+    .stage {
+      border-radius: 16px;
+    }
+    .sec {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+    .shoot {
+      height: 52px;
+      font-size: 17px;
+      border-radius: 14px;
+    }
+    .toggle {
+      height: 52px;
+      padding: 0 10px;
+      font-size: 12px;
+      border-radius: 14px;
+    }
+  }
+
+  /* 僅在手機與平板等行動裝置 (觸控式螢幕) 橫向，且視窗高度小於 520px 時顯示旋轉提示 */
+  @media (max-height: 520px) and (orientation: landscape) and (pointer: coarse) {
+    .orientation-warning {
+      display: flex;
+    }
+    body {
+      overflow: hidden;
+    }
+  }
 
   /* ---- 頂列 ---- */
   header.top{display:flex;align-items:center;gap:10px;padding:6px 2px 12px;}
@@ -175,6 +279,15 @@
 </style>
 </head>
 <body>
+<!-- 螢幕橫向提示（僅限手機橫向時顯示）-->
+<div class="orientation-warning">
+  <div class="orientation-warning__content">
+    <div class="orientation-warning__icon">🔄</div>
+    <h3>請旋轉至直向螢幕</h3>
+    <p>拍貼機專為直向設計，請將您的手機或平板旋轉至直向以獲得最佳拍照體驗。</p>
+  </div>
+</div>
+
 <div class="wrap">
   <header class="top">
     <span class="logo">📸</span>
@@ -644,7 +757,7 @@ startCamera(state.deviceId);
 <script>
 (function(){
   if(!('serviceWorker' in navigator)) return;
-  var APP_VERSION='2026.06.15-3';   // 與 sw.js 的 BUILD_VERSION 同步（bump-version.ps1 會一起改）
+  var APP_VERSION='2026.06.15-4';   // 與 sw.js 的 BUILD_VERSION 同步（bump-version.ps1 會一起改）
   var reloaded=false;
   function showBar(waiting){
     if(document.getElementById('sw-update-bar')) return;
